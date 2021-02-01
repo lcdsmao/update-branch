@@ -106,6 +106,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getMergePendingPullRequests = void 0;
+const core = __importStar(__webpack_require__(186));
 const github = __importStar(__webpack_require__(438));
 const type_1 = __webpack_require__(134);
 function getMergePendingPullRequests(params) {
@@ -129,7 +130,8 @@ function getMergePendingPullRequests(params) {
             owner,
             repo
         });
-        const pullRequests = result.data.repository.pullRequests.nodes;
+        core.info(JSON.stringify(result));
+        const pullRequests = result.repository.pullRequests.nodes;
         const behind = pullRequests.find(pr => pr.mergeable === type_1.MergeStateStatus.BEHIND &&
             pr.reviews.totalCount >= approvedCount);
         return behind;

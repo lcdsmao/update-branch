@@ -18,11 +18,9 @@ export interface PullRequestInfo {
 }
 
 export interface RepositoryPullRequestsInfo {
-  data: {
-    repository: {
-      pullRequests: {
-        nodes: PullRequestInfo[]
-      }
+  repository: {
+    pullRequests: {
+      nodes: PullRequestInfo[]
     }
   }
 }

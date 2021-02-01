@@ -35,7 +35,7 @@ export async function getMergePendingPullRequests(params: {
   )
 
   core.info(JSON.stringify(result))
-  const pullRequests = result.data.repository.pullRequests.nodes
+  const pullRequests = result.repository.pullRequests.nodes
   const behind = pullRequests.find(
     pr =>
       pr.mergeable === MergeStateStatus.BEHIND &&
