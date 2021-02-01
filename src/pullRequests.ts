@@ -16,7 +16,7 @@ export async function getMergePendingPullRequests(params: {
   const result: RepositoryPullRequestsInfo = await octokit.graphql(
     `query ($owner: String!, $repo: String!) {
         repository(name: $repo, owner: $owner) {
-          pullRequests(first: 10, states: OPEN) {
+          pullRequests(first: 20, states: OPEN) {
             nodes {
               title
               number
