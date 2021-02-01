@@ -1,16 +1,27 @@
 import * as core from '@actions/core'
-import {wait} from './wait'
+import * as github from '@actions/github'
+import {getMergePendingPullRequests} from './pullRequests'
 
 async function run(): Promise<void> {
   try {
-    const ms: string = core.getInput('milliseconds')
-    core.debug(`Waiting ${ms} milliseconds ...`) // debug is only output if you set the secret `ACTIONS_RUNNER_DEBUG` to true
-
-    core.debug(new Date().toTimeString())
-    await wait(parseInt(ms, 10))
-    core.debug(new Date().toTimeString())
-
-    core.setOutput('time', new Date().toTimeString())
+    const token = core.getInput('token')
+    const approvedCount = parseInt(core.getInput('approvedCount'))
+    const octokit = github.getOctokit(token)
+    const pending = await getMergePendingPullRequests({
+      octokit: octokit,
+      approvedCount: approvedCount
+    })
+    if (pending === undefined) {
+      core.info('No merge pending PR. Exit.')
+      return
+    }
+    core.info(`Found merge pending PR: ${pending.title}, #${pending.number}.`)
+    const {owner, repo} = github.context.repo
+    await octokit.pulls.updateBranch({
+      owner: owner,
+      repo: repo,
+      pull_number: pending.number
+    })
   } catch (error) {
     core.setFailed(error.message)
   }
