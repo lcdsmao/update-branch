@@ -1,4 +1,5 @@
 import {Octokit} from '@octokit/core'
+import * as core from '@actions/core'
 import * as github from '@actions/github'
 import {
   MergeStateStatus,
@@ -33,6 +34,7 @@ export async function getMergePendingPullRequests(params: {
     }
   )
 
+  core.info(JSON.stringify(result))
   const pullRequests = result.data.repository.pullRequests.nodes
   const behind = pullRequests.find(
     pr =>
