@@ -46,8 +46,8 @@ function run() {
             const approvedCount = parseInt(core.getInput('approvedCount'));
             const octokit = github.getOctokit(token);
             const pending = yield pullRequests_1.getMergePendingPullRequests({
-                octokit: octokit,
-                approvedCount: approvedCount
+                octokit,
+                approvedCount
             });
             if (pending === undefined) {
                 core.info('No merge pending PR. Exit.');
@@ -56,8 +56,8 @@ function run() {
             core.info(`Found merge pending PR: ${pending.title}, #${pending.number}.`);
             const { owner, repo } = github.context.repo;
             yield octokit.pulls.updateBranch({
-                owner: owner,
-                repo: repo,
+                owner,
+                repo,
                 pull_number: pending.number
             });
         }
@@ -126,8 +126,8 @@ function getMergePendingPullRequests(params) {
           }
         }
       }`, {
-            owner: owner,
-            repo: repo
+            owner,
+            repo
         });
         const pullRequests = result.data.repository.pullRequests.nodes;
         const behind = pullRequests.find(pr => pr.mergeable === type_1.MergeStateStatus.BEHIND &&
