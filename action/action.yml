@@ -1,0 +1,14 @@
+name: 'update-branch'
+description: 'Update Branch'
+author: 'ca-love'
+inputs:
+  token:
+    required: true
+    description: 'Github Token'
+  approvedCount:
+    required: true
+    description: 'At least the approved count of the branch to update'
+    default: '0'
+runs:
+  using: 'node12'
+  main: 'dist/index.js'

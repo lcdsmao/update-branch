@@ -39,10 +39,16 @@ export async function getMergePendingPullRequests(params: {
 
   core.info(JSON.stringify(result))
   const pullRequests = result.repository.pullRequests.nodes
-  const behind = pullRequests.find(
+  const isOutOfDate: (status: MergeStateStatus) => boolean = status => {
+    return (
+      status === MergeStateStatus.BEHIND ||
+      status === MergeStateStatus.UNKNOWN ||
+      status === MergeStateStatus.UNSTABLE
+    )
+  }
+  const pending = pullRequests.find(
     pr =>
-      pr.mergeStateStatus === MergeStateStatus.BEHIND &&
-      pr.reviews.totalCount >= approvedCount
+      isOutOfDate(pr.mergeStateStatus) && pr.reviews.totalCount >= approvedCount
   )
-  return behind
+  return pending
 }
