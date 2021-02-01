@@ -8,8 +8,8 @@ async function run(): Promise<void> {
     const approvedCount = parseInt(core.getInput('approvedCount'))
     const octokit = github.getOctokit(token)
     const pending = await getMergePendingPullRequests({
-      octokit: octokit,
-      approvedCount: approvedCount
+      octokit,
+      approvedCount
     })
     if (pending === undefined) {
       core.info('No merge pending PR. Exit.')
@@ -18,8 +18,8 @@ async function run(): Promise<void> {
     core.info(`Found merge pending PR: ${pending.title}, #${pending.number}.`)
     const {owner, repo} = github.context.repo
     await octokit.pulls.updateBranch({
-      owner: owner,
-      repo: repo,
+      owner,
+      repo,
       pull_number: pending.number
     })
   } catch (error) {

@@ -28,8 +28,8 @@ export async function getMergePendingPullRequests(params: {
         }
       }`,
     {
-      owner: owner,
-      repo: repo
+      owner,
+      repo
     }
   )
 
