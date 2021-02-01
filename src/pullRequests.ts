@@ -38,7 +38,7 @@ export async function getMergePendingPullRequests(params: {
   const pullRequests = result.repository.pullRequests.nodes
   const behind = pullRequests.find(
     pr =>
-      pr.mergeable === MergeStateStatus.BEHIND &&
+      pr.mergeStateStatus === MergeStateStatus.BEHIND &&
       pr.reviews.totalCount >= approvedCount
   )
   return behind

@@ -44,7 +44,9 @@ function run() {
         try {
             const token = core.getInput('token');
             const approvedCount = parseInt(core.getInput('approvedCount'));
-            const octokit = github.getOctokit(token);
+            const octokit = github.getOctokit(token, {
+                previews: ['application/vnd.github.merge-info-preview+json']
+            });
             const pending = yield pullRequests_1.getMergePendingPullRequests({
                 octokit,
                 approvedCount
@@ -132,7 +134,7 @@ function getMergePendingPullRequests(params) {
         });
         core.info(JSON.stringify(result));
         const pullRequests = result.repository.pullRequests.nodes;
-        const behind = pullRequests.find(pr => pr.mergeable === type_1.MergeStateStatus.BEHIND &&
+        const behind = pullRequests.find(pr => pr.mergeStateStatus === type_1.MergeStateStatus.BEHIND &&
             pr.reviews.totalCount >= approvedCount);
         return behind;
     });

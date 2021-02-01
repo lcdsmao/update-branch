@@ -14,7 +14,7 @@ export interface PullRequestInfo {
     totalCount: number
   }
   number: number
-  mergeable: MergeStateStatus
+  mergeStateStatus: MergeStateStatus
 }
 
 export interface RepositoryPullRequestsInfo {
