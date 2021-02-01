@@ -1,11 +1,14 @@
-name: 'Your name here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'update-branch'
+description: 'Update Branch'
+author: 'ca-love'
 inputs:
-  milliseconds: # change this
+  token:
     required: true
-    description: 'input description here'
-    default: 'default value if applicable'
+    description: 'Github Token'
+  approvedCount:
+    required: true
+    description: 'At least the approved count of the branch to update'
+    default: '0'
 runs:
   using: 'node12'
   main: 'dist/index.js'
