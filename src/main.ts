@@ -6,9 +6,7 @@ async function run(): Promise<void> {
   try {
     const token = core.getInput('token')
     const approvedCount = parseInt(core.getInput('approvedCount'))
-    const octokit = github.getOctokit(token, {
-      previews: ['application/vnd.github.merge-info-preview+json']
-    })
+    const octokit = github.getOctokit(token)
     const pending = await getMergePendingPullRequests({
       octokit,
       approvedCount

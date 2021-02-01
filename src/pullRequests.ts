@@ -20,7 +20,7 @@ export async function getMergePendingPullRequests(params: {
             nodes {
               title
               number
-              mergeable
+              mergeStateStatus
               reviews(states: APPROVED) {
                 totalCount
               }
@@ -29,6 +29,9 @@ export async function getMergePendingPullRequests(params: {
         }
       }`,
     {
+      headers: {
+        accept: 'application/vnd.github.merge-info-preview+json'
+      },
       owner,
       repo
     }
