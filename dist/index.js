@@ -119,6 +119,7 @@ function getMergePendingPullRequests(params) {
             nodes {
               title
               number
+              mergeable
               mergeStateStatus
               reviews(states: APPROVED) {
                 totalCount
@@ -140,7 +141,12 @@ function getMergePendingPullRequests(params) {
                 status === type_1.MergeStateStatus.UNKNOWN ||
                 status === type_1.MergeStateStatus.UNSTABLE);
         };
-        const pending = pullRequests.find(pr => isOutOfDate(pr.mergeStateStatus) && pr.reviews.totalCount >= approvedCount);
+        const isMergeable = (state) => {
+            return state == type_1.MergeableState.MERGEABLE || state == type_1.MergeableState.UNKNOWN;
+        };
+        const pending = pullRequests.find(pr => isMergeable(pr.mergeable) &&
+            isOutOfDate(pr.mergeStateStatus) &&
+            pr.reviews.totalCount >= approvedCount);
         return pending;
     });
 }
@@ -155,7 +161,7 @@ exports.getMergePendingPullRequests = getMergePendingPullRequests;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.MergeStateStatus = void 0;
+exports.MergeableState = exports.MergeStateStatus = void 0;
 var MergeStateStatus;
 (function (MergeStateStatus) {
     MergeStateStatus["BEHIND"] = "BEHIND";
@@ -166,6 +172,12 @@ var MergeStateStatus;
     MergeStateStatus["UNKNOWN"] = "UNKNOWN";
     MergeStateStatus["UNSTABLE"] = "UNSTABLE";
 })(MergeStateStatus = exports.MergeStateStatus || (exports.MergeStateStatus = {}));
+var MergeableState;
+(function (MergeableState) {
+    MergeableState["CONFLICTING"] = "CONFLICTING";
+    MergeableState["MERGEABLE"] = "MERGEABLE";
+    MergeableState["UNKNOWN"] = "UNKNOWN";
+})(MergeableState = exports.MergeableState || (exports.MergeableState = {}));
 
 
 /***/ }),

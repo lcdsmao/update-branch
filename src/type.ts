@@ -8,12 +8,19 @@ export enum MergeStateStatus {
   UNSTABLE = 'UNSTABLE'
 }
 
+export enum MergeableState {
+  CONFLICTING = 'CONFLICTING',
+  MERGEABLE = 'MERGEABLE',
+  UNKNOWN = 'UNKNOWN'
+}
+
 export interface PullRequestInfo {
   title: string
   reviews: {
     totalCount: number
   }
   number: number
+  mergeable: MergeableState
   mergeStateStatus: MergeStateStatus
 }
 

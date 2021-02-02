@@ -2,6 +2,7 @@ import {Octokit} from '@octokit/core'
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 import {
+  MergeableState,
   MergeStateStatus,
   PullRequestInfo,
   RepositoryPullRequestsInfo
@@ -20,6 +21,7 @@ export async function getMergePendingPullRequests(params: {
             nodes {
               title
               number
+              mergeable
               mergeStateStatus
               reviews(states: APPROVED) {
                 totalCount
@@ -46,9 +48,14 @@ export async function getMergePendingPullRequests(params: {
       status === MergeStateStatus.UNSTABLE
     )
   }
+  const isMergeable = (state: MergeableState): boolean => {
+    return state == MergeableState.MERGEABLE || state == MergeableState.UNKNOWN
+  }
   const pending = pullRequests.find(
     pr =>
-      isOutOfDate(pr.mergeStateStatus) && pr.reviews.totalCount >= approvedCount
+      isMergeable(pr.mergeable) &&
+      isOutOfDate(pr.mergeStateStatus) &&
+      pr.reviews.totalCount >= approvedCount
   )
   return pending
 }
