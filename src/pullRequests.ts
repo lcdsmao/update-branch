@@ -7,12 +7,49 @@ import {
   PullRequestInfo,
   RepositoryPullRequestsInfo
 } from './type'
+import {wait} from './wait'
 
 export async function getMergePendingPullRequests(params: {
   octokit: Octokit
   approvedCount: number
 }): Promise<PullRequestInfo | undefined> {
   const {octokit, approvedCount} = params
+  const maxRetryCount = 10
+  let result = null
+  for (let i = 0; i < maxRetryCount; i++) {
+    result = await listPullRequests(octokit)
+    const isAllAvailable = result.repository.pullRequests.nodes.every(
+      pr => pr.mergeable !== MergeableState.UNKNOWN
+    )
+    if (isAllAvailable) {
+      break
+    }
+    await wait(1000)
+  }
+  if (result === null) {
+    return undefined
+  }
+
+  core.info(JSON.stringify(result, null, 1))
+  const pullRequests = result.repository.pullRequests.nodes
+  const isOutOfDate = (status: MergeStateStatus): boolean => {
+    return status === MergeStateStatus.BEHIND
+  }
+  const isMergeable = (state: MergeableState): boolean => {
+    return state === MergeableState.MERGEABLE
+  }
+  const pending = pullRequests.find(
+    pr =>
+      isMergeable(pr.mergeable) &&
+      isOutOfDate(pr.mergeStateStatus) &&
+      pr.reviews.totalCount >= approvedCount
+  )
+  return pending
+}
+
+async function listPullRequests(
+  octokit: Octokit
+): Promise<RepositoryPullRequestsInfo> {
   const {owner, repo} = github.context.repo
   const result: RepositoryPullRequestsInfo = await octokit.graphql(
     `query ($owner: String!, $repo: String!) {
@@ -38,26 +75,5 @@ export async function getMergePendingPullRequests(params: {
       repo
     }
   )
-
-  core.info(JSON.stringify(result, null, 1))
-  const pullRequests = result.repository.pullRequests.nodes
-  const isOutOfDate = (status: MergeStateStatus): boolean => {
-    return (
-      status === MergeStateStatus.BEHIND ||
-      status === MergeStateStatus.UNKNOWN ||
-      status === MergeStateStatus.UNSTABLE
-    )
-  }
-  const isMergeable = (state: MergeableState): boolean => {
-    return (
-      state === MergeableState.MERGEABLE || state === MergeableState.UNKNOWN
-    )
-  }
-  const pending = pullRequests.find(
-    pr =>
-      isMergeable(pr.mergeable) &&
-      isOutOfDate(pr.mergeStateStatus) &&
-      pr.reviews.totalCount >= approvedCount
-  )
-  return pending
+  return result
 }

@@ -109,9 +109,40 @@ exports.getMergePendingPullRequests = void 0;
 const core = __importStar(__webpack_require__(186));
 const github = __importStar(__webpack_require__(438));
 const type_1 = __webpack_require__(134);
+const wait_1 = __webpack_require__(817);
 function getMergePendingPullRequests(params) {
     return __awaiter(this, void 0, void 0, function* () {
         const { octokit, approvedCount } = params;
+        const maxRetryCount = 10;
+        let result = null;
+        for (let i = 0; i < maxRetryCount; i++) {
+            result = yield listPullRequests(octokit);
+            const isAllAvailable = result.repository.pullRequests.nodes.every(pr => pr.mergeable !== type_1.MergeableState.UNKNOWN);
+            if (isAllAvailable) {
+                break;
+            }
+            yield wait_1.wait(1000);
+        }
+        if (result === null) {
+            return undefined;
+        }
+        core.info(JSON.stringify(result, null, 1));
+        const pullRequests = result.repository.pullRequests.nodes;
+        const isOutOfDate = (status) => {
+            return status === type_1.MergeStateStatus.BEHIND;
+        };
+        const isMergeable = (state) => {
+            return state === type_1.MergeableState.MERGEABLE;
+        };
+        const pending = pullRequests.find(pr => isMergeable(pr.mergeable) &&
+            isOutOfDate(pr.mergeStateStatus) &&
+            pr.reviews.totalCount >= approvedCount);
+        return pending;
+    });
+}
+exports.getMergePendingPullRequests = getMergePendingPullRequests;
+function listPullRequests(octokit) {
+    return __awaiter(this, void 0, void 0, function* () {
         const { owner, repo } = github.context.repo;
         const result = yield octokit.graphql(`query ($owner: String!, $repo: String!) {
         repository(name: $repo, owner: $owner) {
@@ -134,23 +165,9 @@ function getMergePendingPullRequests(params) {
             owner,
             repo
         });
-        core.info(JSON.stringify(result, null, 1));
-        const pullRequests = result.repository.pullRequests.nodes;
-        const isOutOfDate = (status) => {
-            return (status === type_1.MergeStateStatus.BEHIND ||
-                status === type_1.MergeStateStatus.UNKNOWN ||
-                status === type_1.MergeStateStatus.UNSTABLE);
-        };
-        const isMergeable = (state) => {
-            return (state === type_1.MergeableState.MERGEABLE || state === type_1.MergeableState.UNKNOWN);
-        };
-        const pending = pullRequests.find(pr => isMergeable(pr.mergeable) &&
-            isOutOfDate(pr.mergeStateStatus) &&
-            pr.reviews.totalCount >= approvedCount);
-        return pending;
+        return result;
     });
 }
-exports.getMergePendingPullRequests = getMergePendingPullRequests;
 
 
 /***/ }),
@@ -178,6 +195,37 @@ var MergeableState;
     MergeableState["MERGEABLE"] = "MERGEABLE";
     MergeableState["UNKNOWN"] = "UNKNOWN";
 })(MergeableState = exports.MergeableState || (exports.MergeableState = {}));
+
+
+/***/ }),
+
+/***/ 817:
+/***/ (function(__unused_webpack_module, exports) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.wait = void 0;
+function wait(milliseconds) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return new Promise(resolve => {
+            if (isNaN(milliseconds)) {
+                throw new Error('milliseconds not a number');
+            }
+            setTimeout(() => resolve('done!'), milliseconds);
+        });
+    });
+}
+exports.wait = wait;
 
 
 /***/ }),
