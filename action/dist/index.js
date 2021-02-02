@@ -134,7 +134,7 @@ function getMergePendingPullRequests(params) {
             owner,
             repo
         });
-        core.info(JSON.stringify(result));
+        core.info(JSON.stringify(result, null, 1));
         const pullRequests = result.repository.pullRequests.nodes;
         const isOutOfDate = (status) => {
             return (status === type_1.MergeStateStatus.BEHIND ||

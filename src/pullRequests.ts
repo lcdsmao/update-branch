@@ -39,7 +39,7 @@ export async function getMergePendingPullRequests(params: {
     }
   )
 
-  core.info(JSON.stringify(result))
+  core.info(JSON.stringify(result, null, 1))
   const pullRequests = result.repository.pullRequests.nodes
   const isOutOfDate = (status: MergeStateStatus): boolean => {
     return (
