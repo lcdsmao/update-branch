@@ -42,10 +42,10 @@ async function listAvailablePullRequests(
   return await retry(
     async () => {
       const result = await listPullRequests(octokit)
-      const isUnknown = result.repository.pullRequests.nodes.every(
-        pr => pr.mergeable === MergeableState.UNKNOWN
+      const isAvailable = result.repository.pullRequests.nodes.every(
+        pr => pr.mergeable !== MergeableState.UNKNOWN
       )
-      if (isUnknown) throw Error('Some PRs state are UNKNOWN.')
+      if (!isAvailable) throw Error('Some PRs state are UNKNOWN.')
       return result
     },
     {

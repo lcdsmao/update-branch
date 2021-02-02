@@ -139,8 +139,8 @@ function listAvailablePullRequests(octokit) {
     return __awaiter(this, void 0, void 0, function* () {
         return yield async_retry_1.default(() => __awaiter(this, void 0, void 0, function* () {
             const result = yield listPullRequests(octokit);
-            const isUnknown = result.repository.pullRequests.nodes.every(pr => pr.mergeable === type_1.MergeableState.UNKNOWN);
-            if (isUnknown)
+            const isAvailable = result.repository.pullRequests.nodes.every(pr => pr.mergeable !== type_1.MergeableState.UNKNOWN);
+            if (!isAvailable)
                 throw Error('Some PRs state are UNKNOWN.');
             return result;
         }), {
