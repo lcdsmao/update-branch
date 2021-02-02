@@ -49,7 +49,9 @@ export async function getMergePendingPullRequests(params: {
     )
   }
   const isMergeable = (state: MergeableState): boolean => {
-    return state == MergeableState.MERGEABLE || state == MergeableState.UNKNOWN
+    return (
+      state === MergeableState.MERGEABLE || state === MergeableState.UNKNOWN
+    )
   }
   const pending = pullRequests.find(
     pr =>

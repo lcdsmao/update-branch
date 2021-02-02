@@ -142,7 +142,7 @@ function getMergePendingPullRequests(params) {
                 status === type_1.MergeStateStatus.UNSTABLE);
         };
         const isMergeable = (state) => {
-            return state == type_1.MergeableState.MERGEABLE || state == type_1.MergeableState.UNKNOWN;
+            return (state === type_1.MergeableState.MERGEABLE || state === type_1.MergeableState.UNKNOWN);
         };
         const pending = pullRequests.find(pr => isMergeable(pr.mergeable) &&
             isOutOfDate(pr.mergeStateStatus) &&
