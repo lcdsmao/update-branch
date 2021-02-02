@@ -115,7 +115,7 @@ function getMergePendingPullRequests(params) {
         const { owner, repo } = github.context.repo;
         const result = yield octokit.graphql(`query ($owner: String!, $repo: String!) {
         repository(name: $repo, owner: $owner) {
-          pullRequests(first: 10, states: OPEN) {
+          pullRequests(first: 20, states: OPEN) {
             nodes {
               title
               number
@@ -135,7 +135,7 @@ function getMergePendingPullRequests(params) {
         });
         core.info(JSON.stringify(result));
         const pullRequests = result.repository.pullRequests.nodes;
-        const isOutOfDate = status => {
+        const isOutOfDate = (status) => {
             return (status === type_1.MergeStateStatus.BEHIND ||
                 status === type_1.MergeStateStatus.UNKNOWN ||
                 status === type_1.MergeStateStatus.UNSTABLE);
