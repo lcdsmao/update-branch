@@ -24,6 +24,7 @@ export async function getMergePendingPullRequests(params: {
     if (isAllAvailable) {
       break
     }
+    core.info('Some PRs state are UNKNOWN. Retry later.')
     await wait(1000)
   }
   if (result === null) {

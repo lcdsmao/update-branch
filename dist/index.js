@@ -121,6 +121,7 @@ function getMergePendingPullRequests(params) {
             if (isAllAvailable) {
                 break;
             }
+            core.info('Some PRs state are UNKNOWN. Retry later.');
             yield wait_1.wait(1000);
         }
         if (result === null) {
