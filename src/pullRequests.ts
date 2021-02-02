@@ -1,37 +1,25 @@
 import {Octokit} from '@octokit/core'
 import * as core from '@actions/core'
 import * as github from '@actions/github'
+import retry from 'async-retry'
 import {
   MergeableState,
   MergeStateStatus,
   PullRequestInfo,
   RepositoryPullRequestsInfo
 } from './type'
-import {wait} from './wait'
 
 export async function getMergePendingPullRequests(params: {
   octokit: Octokit
   approvedCount: number
 }): Promise<PullRequestInfo | undefined> {
   const {octokit, approvedCount} = params
-  const maxRetryCount = 10
-  let result = null
-  for (let i = 0; i < maxRetryCount; i++) {
-    result = await listPullRequests(octokit)
-    const isAllAvailable = result.repository.pullRequests.nodes.every(
-      pr => pr.mergeable !== MergeableState.UNKNOWN
-    )
-    if (isAllAvailable) {
-      break
-    }
-    core.info('Some PRs state are UNKNOWN. Retry later.')
-    await wait(1000)
+  const result = await listAvailablePullRequests(octokit)
+  if (result === undefined) {
+    return
   }
-  if (result === null) {
-    return undefined
-  }
-
   core.info(JSON.stringify(result, null, 1))
+
   const pullRequests = result.repository.pullRequests.nodes
   const isOutOfDate = (status: MergeStateStatus): boolean => {
     return status === MergeStateStatus.BEHIND
@@ -46,6 +34,25 @@ export async function getMergePendingPullRequests(params: {
       pr.reviews.totalCount >= approvedCount
   )
   return pending
+}
+
+async function listAvailablePullRequests(
+  octokit: Octokit
+): Promise<RepositoryPullRequestsInfo> {
+  return await retry(
+    async () => {
+      const result = await listPullRequests(octokit)
+      const isUnknown = result.repository.pullRequests.nodes.every(
+        pr => pr.mergeable === MergeableState.UNKNOWN
+      )
+      if (isUnknown) throw Error('Some PRs state are UNKNOWN.')
+      return result
+    },
+    {
+      minTimeout: 3000,
+      retries: 5
+    }
+  )
 }
 
 async function listPullRequests(
