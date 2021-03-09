@@ -31,7 +31,8 @@ export async function getMergePendingPullRequests(params: {
     pr =>
       isMergeable(pr.mergeable) &&
       isOutOfDate(pr.mergeStateStatus) &&
-      pr.reviews.totalCount >= approvedCount
+      pr.reviews.totalCount >= approvedCount &&
+      pr.reviews.totalCount >= pr.reviewRequests.totalCount
   )
   return pending
 }
@@ -69,6 +70,9 @@ async function listPullRequests(
               mergeable
               mergeStateStatus
               reviews(states: APPROVED) {
+                totalCount
+              }
+              reviewRequests {
                 totalCount
               }
             }

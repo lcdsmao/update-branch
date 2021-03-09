@@ -19,6 +19,9 @@ export interface PullRequestInfo {
   reviews: {
     totalCount: number
   }
+  reviewRequests: {
+    totalCount: number
+  }
   number: number
   mergeable: MergeableState
   mergeStateStatus: MergeStateStatus
