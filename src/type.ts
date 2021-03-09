@@ -27,10 +27,16 @@ export interface PullRequestInfo {
   mergeStateStatus: MergeStateStatus
 }
 
-export interface RepositoryPullRequestsInfo {
-  repository: {
-    pullRequests: {
-      nodes: PullRequestInfo[]
-    }
-  }
+export interface RepositoryData<T> {
+  repository: T
 }
+
+export type RepositoryPullRequestsInfo = RepositoryData<{
+  pullRequests: {
+    nodes: PullRequestInfo[]
+  }
+}>
+
+export type RepositoryPullRequestInfo = RepositoryData<{
+  pullRequest: PullRequestInfo
+}>
