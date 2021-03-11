@@ -62,7 +62,7 @@ async function run(): Promise<void> {
     })
     await updateRecordIssueBody(ctx, recordIssue, {
       editing: false,
-      waitingPullRequestNumber
+      waitingPullRequestNumber: pendingPr.number
     })
   } catch (error) {
     core.setFailed(error.message)

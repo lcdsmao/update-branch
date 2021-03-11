@@ -140,7 +140,7 @@ function run() {
             });
             yield updateRecordIssueBody(ctx, recordIssue, {
                 editing: false,
-                waitingPullRequestNumber
+                waitingPullRequestNumber: pendingPr.number
             });
         }
         catch (error) {
