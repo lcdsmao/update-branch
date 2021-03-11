@@ -2,8 +2,14 @@ import * as core from '@actions/core'
 import * as github from '@actions/github'
 import {getIssue, updateIssue} from './issue'
 import {getMergePendingPullRequests, getPullRequest} from './pullRequest'
-import {GhContext, IssueInfo, MergeableState, RecordBody} from './type'
-import {stringify} from './utils'
+import {
+  GhContext,
+  IssueInfo,
+  MergeableState,
+  PullRequestInfo,
+  RecordBody
+} from './type'
+import {isPendingPr, stringify} from './utils'
 
 async function run(): Promise<void> {
   try {
@@ -30,6 +36,8 @@ async function run(): Promise<void> {
       ...recordBody,
       editing: true
     })
+
+    let pendingPr: PullRequestInfo | undefined = undefined
     const waitingPullRequestNumber = recordBody.waitingPullRequestNumber
     if (waitingPullRequestNumber) {
       const waitingPr = await getPullRequest(ctx, waitingPullRequestNumber)
@@ -44,9 +52,14 @@ async function run(): Promise<void> {
         })
         return
       }
+
+      if (isPendingPr(waitingPr, approvedCount)) {
+        pendingPr = waitingPr
+      }
     }
 
-    const pendingPr = await getMergePendingPullRequests(ctx, approvedCount)
+    pendingPr =
+      pendingPr ?? (await getMergePendingPullRequests(ctx, approvedCount))
     if (pendingPr === undefined) {
       core.info('No merge pending PR. Exit.')
       await updateRecordIssueBody(ctx, recordIssue, {editing: false})

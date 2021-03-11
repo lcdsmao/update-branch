@@ -116,6 +116,7 @@ function run() {
                 return;
             }
             yield updateRecordIssueBody(ctx, recordIssue, Object.assign(Object.assign({}, recordBody), { editing: true }));
+            let pendingPr = undefined;
             const waitingPullRequestNumber = recordBody.waitingPullRequestNumber;
             if (waitingPullRequestNumber) {
                 const waitingPr = yield pullRequest_1.getPullRequest(ctx, waitingPullRequestNumber);
@@ -125,8 +126,12 @@ function run() {
                     yield updateRecordIssueBody(ctx, recordIssue, Object.assign(Object.assign({}, recordBody), { editing: false }));
                     return;
                 }
+                if (utils_1.isPendingPr(waitingPr, approvedCount)) {
+                    pendingPr = waitingPr;
+                }
             }
-            const pendingPr = yield pullRequest_1.getMergePendingPullRequests(ctx, approvedCount);
+            pendingPr =
+                pendingPr !== null && pendingPr !== void 0 ? pendingPr : (yield pullRequest_1.getMergePendingPullRequests(ctx, approvedCount));
             if (pendingPr === undefined) {
                 core.info('No merge pending PR. Exit.');
                 yield updateRecordIssueBody(ctx, recordIssue, { editing: false });
