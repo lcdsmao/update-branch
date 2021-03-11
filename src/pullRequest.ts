@@ -2,11 +2,11 @@ import retry from 'async-retry'
 import {
   GhContext,
   MergeableState,
-  MergeStateStatus,
   PullRequestInfo,
   RepositoryPullRequestInfo,
   RepositoryPullRequestsInfo
 } from './type'
+import {isPendingPr} from './utils'
 
 export async function getPullRequest(
   ctx: GhContext,
@@ -19,6 +19,7 @@ export async function getPullRequest(
             nodes {
               title
               number
+              merged
               mergeable
               mergeStateStatus
               reviews(states: APPROVED) {
@@ -103,19 +104,4 @@ async function listPullRequests(ctx: GhContext): Promise<PullRequestInfo[]> {
     }
   )
   return result.repository.pullRequests.nodes
-}
-
-function isPendingPr(pr: PullRequestInfo, approvedCount: number): boolean {
-  const isOutOfDate = (status: MergeStateStatus): boolean => {
-    return status === MergeStateStatus.BEHIND
-  }
-  const isMergeable = (state: MergeableState): boolean => {
-    return state === MergeableState.MERGEABLE
-  }
-  return (
-    isMergeable(pr.mergeable) &&
-    isOutOfDate(pr.mergeStateStatus) &&
-    pr.reviews.totalCount >= approvedCount &&
-    pr.reviews.totalCount >= pr.reviewRequests.totalCount
-  )
 }

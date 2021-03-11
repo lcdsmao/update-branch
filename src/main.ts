@@ -1,29 +1,71 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
-import {getMergePendingPullRequests} from './pullRequest'
-import {GhContext} from './type'
+import {getIssue, updateIssue} from './issue'
+import {getMergePendingPullRequests, getPullRequest} from './pullRequest'
+import {GhContext, MergeableState, RecordBody} from './type'
+import {stringify} from './utils'
 
 async function run(): Promise<void> {
   try {
     const token = core.getInput('token')
     const approvedCount = parseInt(core.getInput('approvedCount'))
+    const recordIssueNumber = parseInt(core.getInput('recordIssueNumber'))
     const octokit = github.getOctokit(token)
     const {owner, repo} = github.context.repo
-    const ctx: GhContext = {
-      octokit,
-      owner,
-      repo
+    const ctx: GhContext = {octokit, owner, repo}
+
+    const recordIssue = await getIssue(ctx, recordIssueNumber)
+    const recordBody: RecordBody = JSON.parse(recordIssue.body)
+    const editing = recordBody.editing || false
+    if (editing) {
+      core.info('Editing record issue. Exit.')
+      return
     }
-    const pending = await getMergePendingPullRequests(ctx, approvedCount)
-    if (pending === undefined) {
+    await updateIssue(ctx, {
+      ...recordIssue,
+      body: stringify<RecordBody>({
+        ...recordBody,
+        editing: true
+      })
+    })
+    const waitingPullRequestNumber = recordBody.waitingPullRequestNumber
+    if (waitingPullRequestNumber) {
+      const waitingPr = await getPullRequest(ctx, waitingPullRequestNumber)
+      if (
+        !waitingPr.merged &&
+        waitingPr.mergeable == MergeableState.MERGEABLE
+      ) {
+        core.info(`Waiting PR ${waitingPullRequestNumber} to be merge. Exit.`)
+        await updateIssue(ctx, {
+          ...recordIssue,
+          body: stringify<RecordBody>({
+            ...recordBody,
+            editing: false
+          })
+        })
+        return
+      }
+    }
+
+    const pendingPr = await getMergePendingPullRequests(ctx, approvedCount)
+    if (pendingPr === undefined) {
       core.info('No merge pending PR. Exit.')
       return
     }
-    core.info(`Found merge pending PR: ${pending.title}, #${pending.number}.`)
+    core.info(
+      `Found merge pending PR: ${pendingPr.title}, #${pendingPr.number}.`
+    )
     await octokit.pulls.updateBranch({
       owner,
       repo,
-      pull_number: pending.number
+      pull_number: pendingPr.number
+    })
+    await updateIssue(ctx, {
+      ...recordIssue,
+      body: stringify<RecordBody>({
+        editing: false,
+        waitingPullRequestNumber: pendingPr.number
+      })
     })
   } catch (error) {
     core.setFailed(error.message)

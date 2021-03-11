@@ -6,6 +6,11 @@ export interface GhContext {
   repo: string
 }
 
+export interface RecordBody {
+  editing: boolean | undefined
+  waitingPullRequestNumber: number | undefined
+}
+
 export enum MergeStateStatus {
   BEHIND = 'BEHIND',
   BLOCKED = 'BLOCKED',
@@ -31,6 +36,7 @@ export interface PullRequestInfo {
     totalCount: number
   }
   number: number
+  merged: boolean | undefined
   mergeable: MergeableState
   mergeStateStatus: MergeStateStatus
 }

@@ -9,6 +9,9 @@ inputs:
     required: true
     description: 'At least the approved count of the branch to update'
     default: '0'
+  recordIssueNumber:
+    required: true
+    description: 'Record working progress'
 runs:
   using: 'node12'
   main: 'dist/index.js'
