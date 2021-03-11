@@ -16,18 +16,16 @@ export async function getPullRequest(
     `query ($owner: String!, $repo: String!, $num: Int!) {
         repository(name: $repo, owner: $owner) {
           pullRequest(number: $num) {
-            nodes {
-              title
-              number
-              merged
-              mergeable
-              mergeStateStatus
-              reviews(states: APPROVED) {
-                totalCount
-              }
-              reviewRequests {
-                totalCount
-              }
+            title
+            number
+            merged
+            mergeable
+            mergeStateStatus
+            reviews(states: APPROVED) {
+              totalCount
+            }
+            reviewRequests {
+              totalCount
             }
           }
         }
@@ -44,7 +42,7 @@ export async function getPullRequest(
   return result.repository.pullRequest
 }
 
-export async function getMergePendingPullRequests(
+export async function getMergePendingPullRequest(
   ctx: GhContext,
   approvedCount: number
 ): Promise<PullRequestInfo | undefined> {

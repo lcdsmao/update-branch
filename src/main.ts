@@ -1,7 +1,7 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 import {getIssue, updateIssue} from './issue'
-import {getMergePendingPullRequests, getPullRequest} from './pullRequest'
+import {getMergePendingPullRequest, getPullRequest} from './pullRequest'
 import {
   GhContext,
   IssueInfo,
@@ -59,7 +59,7 @@ async function run(): Promise<void> {
     }
 
     pendingPr =
-      pendingPr ?? (await getMergePendingPullRequests(ctx, approvedCount))
+      pendingPr ?? (await getMergePendingPullRequest(ctx, approvedCount))
     if (pendingPr === undefined) {
       core.info('No merge pending PR. Exit.')
       await updateRecordIssueBody(ctx, recordIssue, {editing: false})

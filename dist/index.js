@@ -131,7 +131,7 @@ function run() {
                 }
             }
             pendingPr =
-                pendingPr !== null && pendingPr !== void 0 ? pendingPr : (yield pullRequest_1.getMergePendingPullRequests(ctx, approvedCount));
+                pendingPr !== null && pendingPr !== void 0 ? pendingPr : (yield pullRequest_1.getMergePendingPullRequest(ctx, approvedCount));
             if (pendingPr === undefined) {
                 core.info('No merge pending PR. Exit.');
                 yield updateRecordIssueBody(ctx, recordIssue, { editing: false });
@@ -181,7 +181,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getMergePendingPullRequests = exports.getPullRequest = void 0;
+exports.getMergePendingPullRequest = exports.getPullRequest = void 0;
 const async_retry_1 = __importDefault(__nccwpck_require__(3415));
 const type_1 = __nccwpck_require__(134);
 const utils_1 = __nccwpck_require__(918);
@@ -190,18 +190,16 @@ function getPullRequest(ctx, num) {
         const result = yield ctx.octokit.graphql(`query ($owner: String!, $repo: String!, $num: Int!) {
         repository(name: $repo, owner: $owner) {
           pullRequest(number: $num) {
-            nodes {
-              title
-              number
-              merged
-              mergeable
-              mergeStateStatus
-              reviews(states: APPROVED) {
-                totalCount
-              }
-              reviewRequests {
-                totalCount
-              }
+            title
+            number
+            merged
+            mergeable
+            mergeStateStatus
+            reviews(states: APPROVED) {
+              totalCount
+            }
+            reviewRequests {
+              totalCount
             }
           }
         }
@@ -217,7 +215,7 @@ function getPullRequest(ctx, num) {
     });
 }
 exports.getPullRequest = getPullRequest;
-function getMergePendingPullRequests(ctx, approvedCount) {
+function getMergePendingPullRequest(ctx, approvedCount) {
     return __awaiter(this, void 0, void 0, function* () {
         const pullRequests = yield listAvailablePullRequests(ctx);
         if (pullRequests === undefined) {
@@ -227,7 +225,7 @@ function getMergePendingPullRequests(ctx, approvedCount) {
         return pending;
     });
 }
-exports.getMergePendingPullRequests = getMergePendingPullRequests;
+exports.getMergePendingPullRequest = getMergePendingPullRequest;
 function listAvailablePullRequests(ctx) {
     return __awaiter(this, void 0, void 0, function* () {
         return yield async_retry_1.default(() => __awaiter(this, void 0, void 0, function* () {
