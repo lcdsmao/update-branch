@@ -7,8 +7,8 @@ export interface GhContext {
 }
 
 export interface RecordBody {
-  editing: boolean | undefined
-  waitingPullRequestNumber: number | undefined
+  editing?: boolean
+  waitingPullRequestNumber?: number
 }
 
 export enum MergeStateStatus {
