@@ -1,8 +1,6 @@
-import {Octokit} from '@octokit/core'
-import * as core from '@actions/core'
-import * as github from '@actions/github'
 import retry from 'async-retry'
 import {
+  GhContext,
   MergeableState,
   MergeStateStatus,
   PullRequestInfo,
@@ -10,15 +8,11 @@ import {
   RepositoryPullRequestsInfo
 } from './type'
 
-export async function getPullRequest({
-  octokit,
-  num
-}: {
-  octokit: Octokit
+export async function getPullRequest(
+  ctx: GhContext,
   num: number
-}): Promise<PullRequestInfo> {
-  const {owner, repo} = github.context.repo
-  const result: RepositoryPullRequestInfo = await octokit.graphql(
+): Promise<PullRequestInfo> {
+  const result: RepositoryPullRequestInfo = await ctx.octokit.graphql(
     `query ($owner: String!, $repo: String!, $num: Int!) {
         repository(name: $repo, owner: $owner) {
           pullRequest(number: $num) {
@@ -41,35 +35,32 @@ export async function getPullRequest({
       headers: {
         accept: 'application/vnd.github.merge-info-preview+json'
       },
-      owner,
-      repo,
+      owner: ctx.owner,
+      repo: ctx.repo,
       num
     }
   )
   return result.repository.pullRequest
 }
 
-export async function getMergePendingPullRequests(params: {
-  octokit: Octokit
+export async function getMergePendingPullRequests(
+  ctx: GhContext,
   approvedCount: number
-}): Promise<PullRequestInfo | undefined> {
-  const {octokit, approvedCount} = params
-  const pullRequests = await listAvailablePullRequests(octokit)
+): Promise<PullRequestInfo | undefined> {
+  const pullRequests = await listAvailablePullRequests(ctx)
   if (pullRequests === undefined) {
     return
   }
-  core.info(JSON.stringify(pullRequests, null, 1))
-
   const pending = pullRequests.find(pr => isPendingPr(pr, approvedCount))
   return pending
 }
 
 async function listAvailablePullRequests(
-  octokit: Octokit
+  ctx: GhContext
 ): Promise<PullRequestInfo[]> {
   return await retry(
     async () => {
-      const pullRequests = await listPullRequests(octokit)
+      const pullRequests = await listPullRequests(ctx)
       const isAvailable = pullRequests.every(
         pr => pr.mergeable !== MergeableState.UNKNOWN
       )
@@ -83,9 +74,8 @@ async function listAvailablePullRequests(
   )
 }
 
-async function listPullRequests(octokit: Octokit): Promise<PullRequestInfo[]> {
-  const {owner, repo} = github.context.repo
-  const result: RepositoryPullRequestsInfo = await octokit.graphql(
+async function listPullRequests(ctx: GhContext): Promise<PullRequestInfo[]> {
+  const result: RepositoryPullRequestsInfo = await ctx.octokit.graphql(
     `query ($owner: String!, $repo: String!) {
         repository(name: $repo, owner: $owner) {
           pullRequests(first: 20, states: OPEN) {
@@ -108,8 +98,8 @@ async function listPullRequests(octokit: Octokit): Promise<PullRequestInfo[]> {
       headers: {
         accept: 'application/vnd.github.merge-info-preview+json'
       },
-      owner,
-      repo
+      owner: ctx.owner,
+      repo: ctx.repo
     }
   )
   return result.repository.pullRequests.nodes

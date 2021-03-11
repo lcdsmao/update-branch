@@ -1,3 +1,11 @@
+import {Octokit} from '@octokit/core'
+
+export interface GhContext {
+  octokit: Octokit
+  owner: string
+  repo: string
+}
+
 export enum MergeStateStatus {
   BEHIND = 'BEHIND',
   BLOCKED = 'BLOCKED',
