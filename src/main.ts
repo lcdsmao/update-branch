@@ -6,6 +6,7 @@ import {
   GhContext,
   IssueInfo,
   MergeableState,
+  MergeStateStatus,
   PullRequestInfo,
   RecordBody
 } from './type'
@@ -44,7 +45,8 @@ async function run(): Promise<void> {
       core.info(`Waiting PR ${stringify(waitingPr)}`)
       if (
         !waitingPr.merged &&
-        waitingPr.mergeable === MergeableState.MERGEABLE
+        waitingPr.mergeable === MergeableState.MERGEABLE &&
+        waitingPr.mergeStateStatus !== MergeStateStatus.BEHIND
       ) {
         core.info(`Waiting PR ${waitingPullRequestNumber} to be merge. Exit.`)
         await updateRecordIssueBody(ctx, recordIssue, {

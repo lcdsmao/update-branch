@@ -122,7 +122,8 @@ function run() {
                 const waitingPr = yield pullRequest_1.getPullRequest(ctx, waitingPullRequestNumber);
                 core.info(`Waiting PR ${utils_1.stringify(waitingPr)}`);
                 if (!waitingPr.merged &&
-                    waitingPr.mergeable === type_1.MergeableState.MERGEABLE) {
+                    waitingPr.mergeable === type_1.MergeableState.MERGEABLE &&
+                    waitingPr.mergeStateStatus !== type_1.MergeStateStatus.BEHIND) {
                     core.info(`Waiting PR ${waitingPullRequestNumber} to be merge. Exit.`);
                     yield updateRecordIssueBody(ctx, recordIssue, Object.assign(Object.assign({}, recordBody), { editing: false }));
                     return;
