@@ -50,8 +50,9 @@ async function run(): Promise<void> {
         waitingPr.mergeable === MergeableState.MERGEABLE &&
         waitingPr.mergeStateStatus === MergeStateStatus.BLOCKED
       ) {
-        core.info(`Waiting PR #${waitingPrNum} to be merged.
-            If you have any problem with this PR, please editing issue #${waitingPrNum} body.`)
+        core.info(
+          `Waiting PR #${waitingPrNum} to be merged. If you have any problem with this PR, please editing issue #${recordIssueNumber} body.`
+        )
         updateRecordIssueBody(ctx, recordIssue, {...recordBody, editing: false})
         return
       }

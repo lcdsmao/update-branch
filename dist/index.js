@@ -123,8 +123,7 @@ function run() {
                 if (!waitingPr.merged &&
                     waitingPr.mergeable === type_1.MergeableState.MERGEABLE &&
                     waitingPr.mergeStateStatus === type_1.MergeStateStatus.BLOCKED) {
-                    core.info(`Waiting PR #${waitingPrNum} to be merged.
-            If you have any problem with this PR, please editing issue #${waitingPrNum} body.`);
+                    core.info(`Waiting PR #${waitingPrNum} to be merged. If you have any problem with this PR, please editing issue #${recordIssueNumber} body.`);
                     updateRecordIssueBody(ctx, recordIssue, Object.assign(Object.assign({}, recordBody), { editing: false }));
                     return;
                 }
