@@ -91,49 +91,33 @@ const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
 const issue_1 = __nccwpck_require__(6018);
 const pullRequest_1 = __nccwpck_require__(7829);
-const type_1 = __nccwpck_require__(134);
 const utils_1 = __nccwpck_require__(918);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const token = core.getInput('token');
             const approvedCount = parseInt(core.getInput('approvedCount'));
             const recordIssueNumber = parseInt(core.getInput('recordIssueNumber'));
+            const token = core.getInput('token');
             const octokit = github.getOctokit(token);
             const { owner, repo } = github.context.repo;
             const ctx = { octokit, owner, repo };
-            const recordIssue = yield issue_1.getIssue(ctx, recordIssueNumber);
-            let recordBody;
-            try {
-                recordBody = JSON.parse(recordIssue.body);
-            }
-            catch (e) {
-                recordBody = {};
-            }
-            const editing = recordBody.editing || false;
-            if (editing) {
+            const { recordIssue, recordBody } = yield getRecordIssue(ctx, recordIssueNumber);
+            if (recordBody.editing) {
                 core.info('Editing record issue. Exit.');
                 return;
             }
             yield updateRecordIssueBody(ctx, recordIssue, Object.assign(Object.assign({}, recordBody), { editing: true }));
-            let pendingPr = undefined;
-            const waitingPullRequestNumber = recordBody.waitingPullRequestNumber;
-            if (waitingPullRequestNumber) {
-                const waitingPr = yield pullRequest_1.getPullRequest(ctx, waitingPullRequestNumber);
-                core.info(`Waiting PR ${utils_1.stringify(waitingPr)}`);
-                if (!waitingPr.merged &&
-                    waitingPr.mergeable === type_1.MergeableState.MERGEABLE &&
-                    waitingPr.mergeStateStatus !== type_1.MergeStateStatus.BEHIND) {
-                    core.info(`Waiting PR ${waitingPullRequestNumber} to be merge. Exit.`);
-                    yield updateRecordIssueBody(ctx, recordIssue, Object.assign(Object.assign({}, recordBody), { editing: false }));
-                    return;
-                }
-                if (utils_1.isPendingPr(waitingPr, approvedCount)) {
-                    pendingPr = waitingPr;
-                }
+            const waitingPrNum = recordBody.waitingPullRequestNumber;
+            let availablePrs;
+            try {
+                availablePrs = yield pullRequest_1.listAvailablePullRequests(ctx);
             }
-            pendingPr =
-                pendingPr !== null && pendingPr !== void 0 ? pendingPr : (yield pullRequest_1.getMergePendingPullRequest(ctx, approvedCount));
+            catch (e) {
+                updateRecordIssueBody(ctx, recordIssue, { editing: false });
+                throw e;
+            }
+            const pendingPrs = availablePrs.filter(pr => utils_1.isPendingPr(pr, approvedCount));
+            const pendingPr = pendingPrs.find(pr => pr.number === waitingPrNum) || pendingPrs[0];
             if (pendingPr === undefined) {
                 core.info('No merge pending PR. Exit.');
                 yield updateRecordIssueBody(ctx, recordIssue, { editing: false });
@@ -160,6 +144,22 @@ function updateRecordIssueBody(ctx, recordIssue, body) {
         yield issue_1.updateIssue(ctx, Object.assign(Object.assign({}, recordIssue), { body: utils_1.stringify(body) }));
     });
 }
+function getRecordIssue(ctx, recordIssueNumber) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const recordIssue = yield issue_1.getIssue(ctx, recordIssueNumber);
+        let recordBody;
+        try {
+            recordBody = JSON.parse(recordIssue.body);
+        }
+        catch (e) {
+            recordBody = {};
+        }
+        return {
+            recordIssue,
+            recordBody
+        };
+    });
+}
 run();
 
 
@@ -183,10 +183,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getMergePendingPullRequest = exports.getPullRequest = void 0;
+exports.listAvailablePullRequests = exports.getPullRequest = void 0;
 const async_retry_1 = __importDefault(__nccwpck_require__(3415));
 const type_1 = __nccwpck_require__(134);
-const utils_1 = __nccwpck_require__(918);
 function getPullRequest(ctx, num) {
     return __awaiter(this, void 0, void 0, function* () {
         const result = yield ctx.octokit.graphql(`query ($owner: String!, $repo: String!, $num: Int!) {
@@ -217,17 +216,6 @@ function getPullRequest(ctx, num) {
     });
 }
 exports.getPullRequest = getPullRequest;
-function getMergePendingPullRequest(ctx, approvedCount) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const pullRequests = yield listAvailablePullRequests(ctx);
-        if (pullRequests === undefined) {
-            return;
-        }
-        const pending = pullRequests.find(pr => utils_1.isPendingPr(pr, approvedCount));
-        return pending;
-    });
-}
-exports.getMergePendingPullRequest = getMergePendingPullRequest;
 function listAvailablePullRequests(ctx) {
     return __awaiter(this, void 0, void 0, function* () {
         return yield async_retry_1.default(() => __awaiter(this, void 0, void 0, function* () {
@@ -242,6 +230,7 @@ function listAvailablePullRequests(ctx) {
         });
     });
 }
+exports.listAvailablePullRequests = listAvailablePullRequests;
 function listPullRequests(ctx) {
     return __awaiter(this, void 0, void 0, function* () {
         const result = yield ctx.octokit.graphql(`query ($owner: String!, $repo: String!) {

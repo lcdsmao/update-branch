@@ -6,7 +6,6 @@ import {
   RepositoryPullRequestInfo,
   RepositoryPullRequestsInfo
 } from './type'
-import {isPendingPr} from './utils'
 
 export async function getPullRequest(
   ctx: GhContext,
@@ -42,19 +41,7 @@ export async function getPullRequest(
   return result.repository.pullRequest
 }
 
-export async function getMergePendingPullRequest(
-  ctx: GhContext,
-  approvedCount: number
-): Promise<PullRequestInfo | undefined> {
-  const pullRequests = await listAvailablePullRequests(ctx)
-  if (pullRequests === undefined) {
-    return
-  }
-  const pending = pullRequests.find(pr => isPendingPr(pr, approvedCount))
-  return pending
-}
-
-async function listAvailablePullRequests(
+export async function listAvailablePullRequests(
   ctx: GhContext
 ): Promise<PullRequestInfo[]> {
   return await retry(
