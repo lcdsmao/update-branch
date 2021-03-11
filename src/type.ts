@@ -27,6 +27,14 @@ export enum MergeableState {
   UNKNOWN = 'UNKNOWN'
 }
 
+export enum StatusState {
+  ERROR = 'ERROR',
+  EXPECTED = 'EXPECTED',
+  FAILURE = 'FAILURE',
+  PENDING = 'PENDING',
+  SUCCESS = 'SUCCESS'
+}
+
 export interface PullRequestInfo {
   title: string
   reviews: {
@@ -39,11 +47,18 @@ export interface PullRequestInfo {
   merged: boolean | undefined
   mergeable: MergeableState
   mergeStateStatus: MergeStateStatus
+  commits: {
+    nodes: CommitInfo[]
+  }
 }
 
 export interface IssueInfo {
   id: string
   body: string
+}
+
+export interface CommitInfo {
+  statusCheckRollup: StatusState
 }
 
 export interface RepositoryData<T> {

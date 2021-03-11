@@ -91,7 +91,6 @@ const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
 const issue_1 = __nccwpck_require__(6018);
 const pullRequest_1 = __nccwpck_require__(7829);
-const type_1 = __nccwpck_require__(134);
 const utils_1 = __nccwpck_require__(918);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
@@ -120,9 +119,7 @@ function run() {
             const waitingPrNum = recordBody.waitingPullRequestNumber;
             if (waitingPrNum !== undefined) {
                 const waitingPr = yield pullRequest_1.getPullRequest(ctx, waitingPrNum);
-                if (!waitingPr.merged &&
-                    waitingPr.mergeable === type_1.MergeableState.MERGEABLE &&
-                    waitingPr.mergeStateStatus === type_1.MergeStateStatus.BLOCKED) {
+                if (utils_1.isWaitingMergePr(waitingPr, approvedCount)) {
                     core.info(`Waiting PR #${waitingPrNum} to be merged. If you have any problem with this PR, please editing issue #${recordIssueNumber} body.`);
                     updateRecordIssueBody(ctx, recordIssue, Object.assign(Object.assign({}, recordBody), { editing: false }));
                     return;
@@ -214,6 +211,15 @@ function getPullRequest(ctx, num) {
             reviewRequests {
               totalCount
             }
+            commits(last: 1) {
+              nodes {
+                commit {
+                  statusCheckRollup {
+                    state
+                  }
+                }
+              }
+            }
           }
         }
       }`, {
@@ -251,6 +257,7 @@ function listPullRequests(ctx) {
             nodes {
               title
               number
+              merged
               mergeable
               mergeStateStatus
               reviews(states: APPROVED) {
@@ -258,6 +265,15 @@ function listPullRequests(ctx) {
               }
               reviewRequests {
                 totalCount
+              }
+              commits(last: 1) {
+                nodes {
+                  commit {
+                    statusCheckRollup {
+                      state
+                    }
+                  }
+                }
               }
             }
           }
@@ -282,7 +298,7 @@ function listPullRequests(ctx) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.MergeableState = exports.MergeStateStatus = void 0;
+exports.StatusState = exports.MergeableState = exports.MergeStateStatus = void 0;
 var MergeStateStatus;
 (function (MergeStateStatus) {
     MergeStateStatus["BEHIND"] = "BEHIND";
@@ -299,6 +315,14 @@ var MergeableState;
     MergeableState["MERGEABLE"] = "MERGEABLE";
     MergeableState["UNKNOWN"] = "UNKNOWN";
 })(MergeableState = exports.MergeableState || (exports.MergeableState = {}));
+var StatusState;
+(function (StatusState) {
+    StatusState["ERROR"] = "ERROR";
+    StatusState["EXPECTED"] = "EXPECTED";
+    StatusState["FAILURE"] = "FAILURE";
+    StatusState["PENDING"] = "PENDING";
+    StatusState["SUCCESS"] = "SUCCESS";
+})(StatusState = exports.StatusState || (exports.StatusState = {}));
 
 
 /***/ }),
@@ -309,19 +333,27 @@ var MergeableState;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.stringify = exports.isPendingPr = void 0;
+exports.stringify = exports.isPendingPr = exports.isWaitingMergePr = exports.isApprovedPr = void 0;
 const type_1 = __nccwpck_require__(134);
-function isPendingPr(pr, approvedCount) {
-    const isOutOfDate = (status) => {
-        return status === type_1.MergeStateStatus.BEHIND;
-    };
-    const isMergeable = (state) => {
-        return state === type_1.MergeableState.MERGEABLE;
-    };
-    return (isMergeable(pr.mergeable) &&
-        isOutOfDate(pr.mergeStateStatus) &&
-        pr.reviews.totalCount >= approvedCount &&
+function isApprovedPr(pr, approvedCount) {
+    return (pr.reviews.totalCount >= approvedCount &&
         pr.reviews.totalCount >= pr.reviewRequests.totalCount);
+}
+exports.isApprovedPr = isApprovedPr;
+function isWaitingMergePr(pr, approvedCount) {
+    return (isApprovedPr(pr, approvedCount) &&
+        !pr.merged &&
+        pr.mergeable === type_1.MergeableState.MERGEABLE &&
+        pr.mergeStateStatus === type_1.MergeStateStatus.BLOCKED &&
+        pr.commits.nodes[0].statusCheckRollup === type_1.StatusState.PENDING);
+}
+exports.isWaitingMergePr = isWaitingMergePr;
+function isPendingPr(pr, approvedCount) {
+    return (isApprovedPr(pr, approvedCount) &&
+        !pr.merged &&
+        pr.mergeable === type_1.MergeableState.MERGEABLE &&
+        pr.mergeStateStatus === type_1.MergeStateStatus.BEHIND &&
+        pr.commits.nodes[0].statusCheckRollup === type_1.StatusState.SUCCESS);
 }
 exports.isPendingPr = isPendingPr;
 function stringify(obj) {

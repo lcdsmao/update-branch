@@ -2,14 +2,8 @@ import * as core from '@actions/core'
 import * as github from '@actions/github'
 import {getIssue, updateIssue} from './issue'
 import {getPullRequest, listAvailablePullRequests} from './pullRequest'
-import {
-  GhContext,
-  IssueInfo,
-  MergeableState,
-  MergeStateStatus,
-  RecordBody
-} from './type'
-import {isPendingPr, stringify} from './utils'
+import {GhContext, IssueInfo, RecordBody} from './type'
+import {isPendingPr, isWaitingMergePr, stringify} from './utils'
 
 async function run(): Promise<void> {
   try {
@@ -45,11 +39,7 @@ async function run(): Promise<void> {
     const waitingPrNum = recordBody.waitingPullRequestNumber
     if (waitingPrNum !== undefined) {
       const waitingPr = await getPullRequest(ctx, waitingPrNum)
-      if (
-        !waitingPr.merged &&
-        waitingPr.mergeable === MergeableState.MERGEABLE &&
-        waitingPr.mergeStateStatus === MergeStateStatus.BLOCKED
-      ) {
+      if (isWaitingMergePr(waitingPr, approvedCount)) {
         core.info(
           `Waiting PR #${waitingPrNum} to be merged. If you have any problem with this PR, please editing issue #${recordIssueNumber} body.`
         )

@@ -26,6 +26,15 @@ export async function getPullRequest(
             reviewRequests {
               totalCount
             }
+            commits(last: 1) {
+              nodes {
+                commit {
+                  statusCheckRollup {
+                    state
+                  }
+                }
+              }
+            }
           }
         }
       }`,
@@ -68,6 +77,7 @@ async function listPullRequests(ctx: GhContext): Promise<PullRequestInfo[]> {
             nodes {
               title
               number
+              merged
               mergeable
               mergeStateStatus
               reviews(states: APPROVED) {
@@ -75,6 +85,15 @@ async function listPullRequests(ctx: GhContext): Promise<PullRequestInfo[]> {
               }
               reviewRequests {
                 totalCount
+              }
+              commits(last: 1) {
+                nodes {
+                  commit {
+                    statusCheckRollup {
+                      state
+                    }
+                  }
+                }
               }
             }
           }
