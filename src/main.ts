@@ -35,7 +35,7 @@ async function run(): Promise<void> {
       const waitingPr = await getPullRequest(ctx, waitingPullRequestNumber)
       if (
         !waitingPr.merged &&
-        waitingPr.mergeable == MergeableState.MERGEABLE
+        waitingPr.mergeable === MergeableState.MERGEABLE
       ) {
         core.info(`Waiting PR ${waitingPullRequestNumber} to be merge. Exit.`)
         await updateRecordIssueBody(ctx, recordIssue, {
