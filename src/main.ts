@@ -1,8 +1,14 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 import {getIssue, updateIssue} from './issue'
-import {listAvailablePullRequests} from './pullRequest'
-import {GhContext, IssueInfo, RecordBody} from './type'
+import {getPullRequest, listAvailablePullRequests} from './pullRequest'
+import {
+  GhContext,
+  IssueInfo,
+  MergeableState,
+  MergeStateStatus,
+  RecordBody
+} from './type'
 import {isPendingPr, stringify} from './utils'
 
 async function run(): Promise<void> {
@@ -26,7 +32,6 @@ async function run(): Promise<void> {
       ...recordBody,
       editing: true
     })
-    const waitingPrNum = recordBody.waitingPullRequestNumber
 
     let availablePrs
     try {
@@ -34,6 +39,22 @@ async function run(): Promise<void> {
     } catch (e) {
       updateRecordIssueBody(ctx, recordIssue, {editing: false})
       throw e
+    }
+
+    // Get after all pr status become available
+    const waitingPrNum = recordBody.waitingPullRequestNumber
+    if (waitingPrNum !== undefined) {
+      const waitingPr = await getPullRequest(ctx, waitingPrNum)
+      if (
+        !waitingPr.merged &&
+        waitingPr.mergeable === MergeableState.MERGEABLE &&
+        waitingPr.mergeStateStatus === MergeStateStatus.BLOCKED
+      ) {
+        core.info(`Waiting PR #${waitingPrNum} to be merged.
+            If you have any problem with this PR, please editing issue #${waitingPrNum} body.`)
+        updateRecordIssueBody(ctx, recordIssue, {...recordBody, editing: false})
+        return
+      }
     }
 
     const pendingPrs = availablePrs.filter(pr => isPendingPr(pr, approvedCount))

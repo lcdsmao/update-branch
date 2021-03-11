@@ -91,6 +91,7 @@ const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
 const issue_1 = __nccwpck_require__(6018);
 const pullRequest_1 = __nccwpck_require__(7829);
+const type_1 = __nccwpck_require__(134);
 const utils_1 = __nccwpck_require__(918);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
@@ -107,7 +108,6 @@ function run() {
                 return;
             }
             yield updateRecordIssueBody(ctx, recordIssue, Object.assign(Object.assign({}, recordBody), { editing: true }));
-            const waitingPrNum = recordBody.waitingPullRequestNumber;
             let availablePrs;
             try {
                 availablePrs = yield pullRequest_1.listAvailablePullRequests(ctx);
@@ -115,6 +115,19 @@ function run() {
             catch (e) {
                 updateRecordIssueBody(ctx, recordIssue, { editing: false });
                 throw e;
+            }
+            // Get after all pr status become available
+            const waitingPrNum = recordBody.waitingPullRequestNumber;
+            if (waitingPrNum !== undefined) {
+                const waitingPr = yield pullRequest_1.getPullRequest(ctx, waitingPrNum);
+                if (!waitingPr.merged &&
+                    waitingPr.mergeable === type_1.MergeableState.MERGEABLE &&
+                    waitingPr.mergeStateStatus === type_1.MergeStateStatus.BLOCKED) {
+                    core.info(`Waiting PR #${waitingPrNum} to be merged.
+            If you have any problem with this PR, please editing issue #${waitingPrNum} body.`);
+                    updateRecordIssueBody(ctx, recordIssue, Object.assign(Object.assign({}, recordBody), { editing: false }));
+                    return;
+                }
             }
             const pendingPrs = availablePrs.filter(pr => utils_1.isPendingPr(pr, approvedCount));
             const pendingPr = pendingPrs.find(pr => pr.number === waitingPrNum) || pendingPrs[0];
