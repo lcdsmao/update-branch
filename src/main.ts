@@ -15,7 +15,12 @@ async function run(): Promise<void> {
     const ctx: GhContext = {octokit, owner, repo}
 
     const recordIssue = await getIssue(ctx, recordIssueNumber)
-    const recordBody: RecordBody = JSON.parse(recordIssue.body)
+    let recordBody: RecordBody
+    try {
+      recordBody = JSON.parse(recordIssue.body)
+    } catch (e) {
+      recordBody = {}
+    }
     const editing = recordBody.editing || false
     if (editing) {
       core.info('Editing record issue. Exit.')
