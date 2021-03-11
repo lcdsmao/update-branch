@@ -1,6 +1,6 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
-import {getMergePendingPullRequests} from './pullRequests'
+import {getMergePendingPullRequests} from './pullRequest'
 import {GhContext} from './type'
 
 async function run(): Promise<void> {
