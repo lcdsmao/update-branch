@@ -27,6 +27,11 @@ export interface PullRequestInfo {
   mergeStateStatus: MergeStateStatus
 }
 
+export interface IssueInfo {
+  id: string
+  body: string
+}
+
 export interface RepositoryData<T> {
   repository: T
 }
@@ -39,4 +44,8 @@ export type RepositoryPullRequestsInfo = RepositoryData<{
 
 export type RepositoryPullRequestInfo = RepositoryData<{
   pullRequest: PullRequestInfo
+}>
+
+export type RepositoryIssueInfo = RepositoryData<{
+  issue: IssueInfo
 }>
