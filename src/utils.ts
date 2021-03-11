@@ -1,9 +1,4 @@
-import {
-  MergeableState,
-  MergeStateStatus,
-  PullRequestInfo,
-  RecordBody
-} from './type'
+import {MergeableState, MergeStateStatus, PullRequestInfo} from './type'
 
 export function isPendingPr(
   pr: PullRequestInfo,
