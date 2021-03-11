@@ -41,6 +41,7 @@ async function run(): Promise<void> {
     const waitingPullRequestNumber = recordBody.waitingPullRequestNumber
     if (waitingPullRequestNumber) {
       const waitingPr = await getPullRequest(ctx, waitingPullRequestNumber)
+      core.info(`Waiting PR ${stringify(waitingPr)}`)
       if (
         !waitingPr.merged &&
         waitingPr.mergeable === MergeableState.MERGEABLE
