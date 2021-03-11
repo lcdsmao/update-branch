@@ -2,7 +2,7 @@ import * as core from '@actions/core'
 import * as github from '@actions/github'
 import {getIssue, updateIssue} from './issue'
 import {getMergePendingPullRequests, getPullRequest} from './pullRequest'
-import {GhContext, MergeableState, RecordBody} from './type'
+import {GhContext, IssueInfo, MergeableState, RecordBody} from './type'
 import {stringify} from './utils'
 
 async function run(): Promise<void> {
@@ -26,12 +26,9 @@ async function run(): Promise<void> {
       core.info('Editing record issue. Exit.')
       return
     }
-    await updateIssue(ctx, {
-      ...recordIssue,
-      body: stringify<RecordBody>({
-        ...recordBody,
-        editing: true
-      })
+    await updateRecordIssueBody(ctx, recordIssue, {
+      ...recordBody,
+      editing: true
     })
     const waitingPullRequestNumber = recordBody.waitingPullRequestNumber
     if (waitingPullRequestNumber) {
@@ -41,12 +38,9 @@ async function run(): Promise<void> {
         waitingPr.mergeable == MergeableState.MERGEABLE
       ) {
         core.info(`Waiting PR ${waitingPullRequestNumber} to be merge. Exit.`)
-        await updateIssue(ctx, {
-          ...recordIssue,
-          body: stringify<RecordBody>({
-            ...recordBody,
-            editing: false
-          })
+        await updateRecordIssueBody(ctx, recordIssue, {
+          ...recordBody,
+          editing: false
         })
         return
       }
@@ -55,6 +49,7 @@ async function run(): Promise<void> {
     const pendingPr = await getMergePendingPullRequests(ctx, approvedCount)
     if (pendingPr === undefined) {
       core.info('No merge pending PR. Exit.')
+      await updateRecordIssueBody(ctx, recordIssue, {editing: false})
       return
     }
     core.info(
@@ -65,16 +60,24 @@ async function run(): Promise<void> {
       repo,
       pull_number: pendingPr.number
     })
-    await updateIssue(ctx, {
-      ...recordIssue,
-      body: stringify<RecordBody>({
-        editing: false,
-        waitingPullRequestNumber: pendingPr.number
-      })
+    await updateRecordIssueBody(ctx, recordIssue, {
+      editing: false,
+      waitingPullRequestNumber
     })
   } catch (error) {
     core.setFailed(error.message)
   }
+}
+
+async function updateRecordIssueBody(
+  ctx: GhContext,
+  recordIssue: IssueInfo,
+  body: RecordBody
+): Promise<void> {
+  await updateIssue(ctx, {
+    ...recordIssue,
+    body: stringify(body)
+  })
 }
 
 run()
