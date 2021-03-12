@@ -75,8 +75,14 @@ export interface IssueInfo {
 }
 
 export interface CommitInfo {
-  statusCheckRollup: StatusState
-  context: {
+  commit: {
+    statusCheckRollup: StatusCheckRollupInfo
+  }
+}
+
+export interface StatusCheckRollupInfo {
+  state: StatusState
+  contexts: {
     nodes: CheckRunInfo[]
   }
 }

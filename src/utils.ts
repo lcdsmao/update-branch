@@ -16,7 +16,7 @@ export function isWaitingMergePr(
     !pr.merged &&
     pr.mergeable === MergeableState.MERGEABLE &&
     pr.mergeStateStatus === MergeStateStatus.BLOCKED &&
-    pr.commits.nodes[0].statusCheckRollup === StatusState.PENDING
+    pr.commits.nodes[0].commit.statusCheckRollup.state === StatusState.PENDING
   )
 }
 
@@ -48,15 +48,15 @@ function isStatusCheckSuccess(
   pr: PullRequestInfo,
   condition: Condition
 ): boolean {
-  const commit = pr.commits.nodes[0]
+  const check = pr.commits.nodes[0].commit.statusCheckRollup
   if (condition.statusChecks.length) {
     const conclusions = new Map(
-      commit.context.nodes.map(i => [i.name, i.conclusion])
+      check.contexts.nodes.map(i => [i.name, i.conclusion])
     )
     return condition.statusChecks.every(
       name => conclusions.get(name) === CheckConclusionState.SUCCESS
     )
   } else {
-    return pr.commits.nodes[0].statusCheckRollup === StatusState.SUCCESS
+    return check.state === StatusState.SUCCESS
   }
 }
