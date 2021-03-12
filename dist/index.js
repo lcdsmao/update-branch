@@ -95,9 +95,17 @@ const utils_1 = __nccwpck_require__(918);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const approvedCount = parseInt(core.getInput('approvedCount'));
             const recordIssueNumber = parseInt(core.getInput('recordIssueNumber'));
+            const approvedCount = parseInt(core.getInput('approvedCount'));
+            const statusChecks = core
+                .getInput('statusChecks')
+                .split('\n')
+                .filter(s => s !== '');
             const token = core.getInput('token');
+            const condition = {
+                approvedCount,
+                statusChecks
+            };
             const octokit = github.getOctokit(token);
             const { owner, repo } = github.context.repo;
             const ctx = { octokit, owner, repo };
@@ -107,45 +115,48 @@ function run() {
                 return;
             }
             yield updateRecordIssueBody(ctx, recordIssue, Object.assign(Object.assign({}, recordBody), { editing: true }));
-            let availablePrs;
+            let updatedIssueBody = { editing: false };
             try {
-                availablePrs = yield pullRequest_1.listAvailablePullRequests(ctx);
+                updatedIssueBody = yield updateBranch(ctx, recordBody, condition);
             }
-            catch (e) {
-                updateRecordIssueBody(ctx, recordIssue, { editing: false });
-                throw e;
+            catch (error) {
+                yield updateRecordIssueBody(ctx, recordIssue, updatedIssueBody);
+                throw error;
             }
-            // Get after all pr status become available
-            const waitingPrNum = recordBody.waitingPullRequestNumber;
-            if (waitingPrNum !== undefined) {
-                const waitingPr = yield pullRequest_1.getPullRequest(ctx, waitingPrNum);
-                if (utils_1.isWaitingMergePr(waitingPr, approvedCount)) {
-                    core.info(`Waiting PR #${waitingPrNum} to be merged. If you have any problem with this PR, please editing issue #${recordIssueNumber} body.`);
-                    updateRecordIssueBody(ctx, recordIssue, Object.assign(Object.assign({}, recordBody), { editing: false }));
-                    return;
-                }
-            }
-            const pendingPrs = availablePrs.filter(pr => utils_1.isPendingPr(pr, approvedCount));
-            const pendingPr = pendingPrs.find(pr => pr.number === waitingPrNum) || pendingPrs[0];
-            if (pendingPr === undefined) {
-                core.info('No merge pending PR. Exit.');
-                yield updateRecordIssueBody(ctx, recordIssue, { editing: false });
-                return;
-            }
-            core.info(`Found merge pending PR: ${pendingPr.title}, #${pendingPr.number}.`);
-            yield octokit.pulls.updateBranch({
-                owner,
-                repo,
-                pull_number: pendingPr.number
-            });
-            yield updateRecordIssueBody(ctx, recordIssue, {
-                editing: false,
-                waitingPullRequestNumber: pendingPr.number
-            });
         }
         catch (error) {
             core.setFailed(error.message);
         }
+    });
+}
+function updateBranch(ctx, recordBody, condition) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const availablePrs = yield pullRequest_1.listAvailablePullRequests(ctx);
+        // Get waiting merge pr after all pr status become available
+        const waitingPrNum = recordBody.waitingMergePullRequestNumber;
+        if (waitingPrNum !== undefined) {
+            const waitingPr = yield pullRequest_1.getPullRequest(ctx, waitingPrNum);
+            if (utils_1.isWaitingMergePr(waitingPr, condition)) {
+                core.info(`Waiting PR #${waitingPrNum} to be merged.`);
+                return Object.assign(Object.assign({}, recordBody), { editing: false });
+            }
+        }
+        const pendingPrs = availablePrs.filter(pr => utils_1.isPendingPr(pr, condition));
+        const pendingPr = pendingPrs.find(pr => pr.number === waitingPrNum) || pendingPrs[0];
+        if (pendingPr === undefined) {
+            core.info('No merge pending PR. Exit.');
+            return { editing: false };
+        }
+        core.info(`Found merge pending PR: ${pendingPr.title}, #${pendingPr.number}.`);
+        yield ctx.octokit.pulls.updateBranch({
+            owner: ctx.owner,
+            repo: ctx.repo,
+            pull_number: pendingPr.number
+        });
+        return {
+            editing: false,
+            waitingMergePullRequestNumber: pendingPr.number
+        };
     });
 }
 function updateRecordIssueBody(ctx, recordIssue, body) {
@@ -215,6 +226,14 @@ function getPullRequest(ctx, num) {
               nodes {
                 commit {
                   statusCheckRollup {
+                    contexts(first: 20) {
+                      nodes {
+                        ... on CheckRun {
+                          name
+                          conclusion
+                        }
+                      }
+                    }
                     state
                   }
                 }
@@ -270,6 +289,14 @@ function listPullRequests(ctx) {
                 nodes {
                   commit {
                     statusCheckRollup {
+                      contexts(first: 20) {
+                        nodes {
+                          ... on CheckRun {
+                            name
+                            conclusion
+                          }
+                        }
+                      }
                       state
                     }
                   }
@@ -298,7 +325,7 @@ function listPullRequests(ctx) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.StatusState = exports.MergeableState = exports.MergeStateStatus = void 0;
+exports.CheckConclusionState = exports.StatusState = exports.MergeableState = exports.MergeStateStatus = void 0;
 var MergeStateStatus;
 (function (MergeStateStatus) {
     MergeStateStatus["BEHIND"] = "BEHIND";
@@ -323,6 +350,18 @@ var StatusState;
     StatusState["PENDING"] = "PENDING";
     StatusState["SUCCESS"] = "SUCCESS";
 })(StatusState = exports.StatusState || (exports.StatusState = {}));
+var CheckConclusionState;
+(function (CheckConclusionState) {
+    CheckConclusionState["ACTION_REQUIRED"] = "ACTION_REQUIRED";
+    CheckConclusionState["CANCELLED"] = "CANCELLED";
+    CheckConclusionState["FAILURE"] = "FAILURE";
+    CheckConclusionState["NEUTRAL"] = "NEUTRAL";
+    CheckConclusionState["SKIPPED"] = "SKIPPED";
+    CheckConclusionState["STALE"] = "STALE";
+    CheckConclusionState["STARTUP_FAILURE"] = "STARTUP_FAILURE";
+    CheckConclusionState["SUCCESS"] = "SUCCESS";
+    CheckConclusionState["TIMED_OUT"] = "TIMED_OUT";
+})(CheckConclusionState = exports.CheckConclusionState || (exports.CheckConclusionState = {}));
 
 
 /***/ }),
@@ -333,33 +372,42 @@ var StatusState;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.stringify = exports.isPendingPr = exports.isWaitingMergePr = exports.isApprovedPr = void 0;
+exports.stringify = exports.isPendingPr = exports.isWaitingMergePr = void 0;
 const type_1 = __nccwpck_require__(134);
-function isApprovedPr(pr, approvedCount) {
-    return (pr.reviews.totalCount >= approvedCount &&
-        pr.reviews.totalCount >= pr.reviewRequests.totalCount);
-}
-exports.isApprovedPr = isApprovedPr;
-function isWaitingMergePr(pr, approvedCount) {
-    return (isApprovedPr(pr, approvedCount) &&
+function isWaitingMergePr(pr, condition) {
+    return (isApprovedPr(pr, condition) &&
         !pr.merged &&
         pr.mergeable === type_1.MergeableState.MERGEABLE &&
         pr.mergeStateStatus === type_1.MergeStateStatus.BLOCKED &&
-        pr.commits.nodes[0].statusCheckRollup === type_1.StatusState.PENDING);
+        pr.commits.nodes[0].commit.statusCheckRollup.state === type_1.StatusState.PENDING);
 }
 exports.isWaitingMergePr = isWaitingMergePr;
-function isPendingPr(pr, approvedCount) {
-    return (isApprovedPr(pr, approvedCount) &&
+function isPendingPr(pr, condition) {
+    return (isApprovedPr(pr, condition) &&
         !pr.merged &&
         pr.mergeable === type_1.MergeableState.MERGEABLE &&
         pr.mergeStateStatus === type_1.MergeStateStatus.BEHIND &&
-        pr.commits.nodes[0].statusCheckRollup === type_1.StatusState.SUCCESS);
+        isStatusCheckSuccess(pr, condition));
 }
 exports.isPendingPr = isPendingPr;
 function stringify(obj) {
     return JSON.stringify(obj);
 }
 exports.stringify = stringify;
+function isApprovedPr(pr, condition) {
+    return (pr.reviews.totalCount >= condition.approvedCount &&
+        pr.reviews.totalCount >= pr.reviewRequests.totalCount);
+}
+function isStatusCheckSuccess(pr, condition) {
+    const check = pr.commits.nodes[0].commit.statusCheckRollup;
+    if (condition.statusChecks.length) {
+        const conclusions = new Map(check.contexts.nodes.map(i => [i.name, i.conclusion]));
+        return condition.statusChecks.every(name => conclusions.get(name) === type_1.CheckConclusionState.SUCCESS);
+    }
+    else {
+        return check.state === type_1.StatusState.SUCCESS;
+    }
+}
 
 
 /***/ }),
