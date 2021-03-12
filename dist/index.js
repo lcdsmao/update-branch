@@ -119,9 +119,8 @@ function run() {
             try {
                 updatedIssueBody = yield updateBranch(ctx, recordBody, condition);
             }
-            catch (error) {
+            finally {
                 yield updateRecordIssueBody(ctx, recordIssue, updatedIssueBody);
-                throw error;
             }
         }
         catch (error) {

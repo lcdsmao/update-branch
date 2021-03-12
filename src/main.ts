@@ -39,9 +39,8 @@ async function run(): Promise<void> {
     let updatedIssueBody: RecordBody = {editing: false}
     try {
       updatedIssueBody = await updateBranch(ctx, recordBody, condition)
-    } catch (error) {
+    } finally {
       await updateRecordIssueBody(ctx, recordIssue, updatedIssueBody)
-      throw error
     }
   } catch (error) {
     core.setFailed(error.message)
