@@ -13,7 +13,11 @@ import {
   MergeStateStatus,
   RecordBody
 } from './type'
-import {isPendingPr, isWaitingMergePr, stringify} from './utils'
+import {
+  isStatusCheckPassAndBehindPr,
+  isPendingMergePr,
+  stringify
+} from './utils'
 
 async function run(): Promise<void> {
   try {
@@ -38,7 +42,7 @@ async function run(): Promise<void> {
       recordIssueNumber
     )
     if (recordBody.editing) {
-      core.info('Editing record issue. Exit.')
+      core.info('Other actions are editing record. Exit.')
       return
     }
     await updateRecordIssueBody(ctx, recordIssue, {
@@ -48,7 +52,7 @@ async function run(): Promise<void> {
 
     let newIssueBody: RecordBody = {editing: false}
     try {
-      newIssueBody = await findPendingPrAndUpdateBranch(
+      newIssueBody = await findBehindPrAndUpdateBranch(
         ctx,
         recordBody,
         condition
@@ -61,46 +65,50 @@ async function run(): Promise<void> {
   }
 }
 
-async function findPendingPrAndUpdateBranch(
+async function findBehindPrAndUpdateBranch(
   ctx: GhContext,
   recordBody: RecordBody,
   condition: Condition
 ): Promise<RecordBody> {
   const availablePrs = await listAvailablePullRequests(ctx)
-  // Get waiting merge pr after all pr status become available
-  const waitingPrNum = recordBody.waitingMergePullRequestNumber
-  if (waitingPrNum !== undefined) {
-    const waitingPr = await getPullRequest(ctx, waitingPrNum)
-    core.info(`Found recorded PR ${stringify(waitingPr)}.`)
-    if (isWaitingMergePr(waitingPr, condition)) {
-      if (waitingPr.mergeStateStatus === MergeStateStatus.BLOCKED) {
-        core.info(`Waiting PR #${waitingPrNum} to be merged.`)
+  // Get pending merge pr after all pr status become available
+  const pendingMergePrNum = recordBody.pendingMergePullRequestNumber
+  if (pendingMergePrNum !== undefined) {
+    const pendingMergePr = await getPullRequest(ctx, pendingMergePrNum)
+    core.info(`Found pending merge PR ${stringify(pendingMergePr)}.`)
+    if (isPendingMergePr(pendingMergePr, condition)) {
+      if (pendingMergePr.mergeStateStatus === MergeStateStatus.BLOCKED) {
+        core.info(`Wait PR #${pendingMergePrNum} to be merged.`)
         return {...recordBody, editing: false}
-      } else if (waitingPr.mergeStateStatus === MergeStateStatus.BEHIND) {
-        updateBranch(ctx, waitingPrNum)
-        core.info(`Update branch and wait PR #${waitingPrNum} to be merged.`)
+      } else if (pendingMergePr.mergeStateStatus === MergeStateStatus.BEHIND) {
+        updateBranch(ctx, pendingMergePrNum)
+        core.info(
+          `Update branch and wait PR #${pendingMergePrNum} to be merged.`
+        )
         return {...recordBody, editing: false}
       }
     }
     core.info(
-      `Recorded PR #${waitingPrNum} can not be merged. Try to find other PR that is pending update branch.`
+      `Pending merge PR #${pendingMergePrNum} can not be merged. Try to find other PR that needs update branch.`
     )
   }
 
-  const pendingPrs = availablePrs.filter(pr => isPendingPr(pr, condition))
-  const pendingPr =
-    pendingPrs.find(pr => pr.number === waitingPrNum) || pendingPrs[0]
-  if (pendingPr === undefined) {
-    core.info('Found no PR that is pending update branch.')
+  const behindPrs = availablePrs.filter(pr =>
+    isStatusCheckPassAndBehindPr(pr, condition)
+  )
+  const behindPr =
+    behindPrs.find(pr => pr.number === pendingMergePrNum) || behindPrs[0]
+  if (behindPr === undefined) {
+    core.info('Found no PR that needs update branch.')
     return {editing: false}
   }
   core.info(
-    `Found PR: ${pendingPr.title}, #${pendingPr.number} and try to update branch.`
+    `Found PR: ${behindPr.title}, #${behindPr.number} and try to update branch.`
   )
-  updateBranch(ctx, pendingPr.number)
+  updateBranch(ctx, behindPr.number)
   return {
     editing: false,
-    waitingMergePullRequestNumber: pendingPr.number
+    pendingMergePullRequestNumber: behindPr.number
   }
 }
 

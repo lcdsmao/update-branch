@@ -7,7 +7,7 @@ import {
   StatusState
 } from './type'
 
-export function isWaitingMergePr(
+export function isPendingMergePr(
   pr: PullRequestInfo,
   condition: Condition
 ): boolean {
@@ -19,7 +19,7 @@ export function isWaitingMergePr(
   )
 }
 
-export function isPendingPr(
+export function isStatusCheckPassAndBehindPr(
   pr: PullRequestInfo,
   condition: Condition
 ): boolean {

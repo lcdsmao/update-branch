@@ -13,7 +13,7 @@ export interface Condition {
 
 export interface RecordBody {
   editing?: boolean
-  waitingMergePullRequestNumber?: number
+  pendingMergePullRequestNumber?: number
 }
 
 export enum MergeStateStatus {
