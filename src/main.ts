@@ -46,15 +46,15 @@ async function run(): Promise<void> {
       editing: true
     })
 
-    let updatedIssueBody: RecordBody = {editing: false}
+    let newIssueBody: RecordBody = {editing: false}
     try {
-      updatedIssueBody = await findPendingPrAndUpdateBranch(
+      newIssueBody = await findPendingPrAndUpdateBranch(
         ctx,
         recordBody,
         condition
       )
     } finally {
-      await updateRecordIssueBody(ctx, recordIssue, updatedIssueBody)
+      await updateRecordIssueBody(ctx, recordIssue, newIssueBody)
     }
   } catch (error) {
     core.setFailed(error.message)
