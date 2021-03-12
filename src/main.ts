@@ -57,6 +57,7 @@ async function updateBranch(
   const waitingPrNum = recordBody.waitingMergePullRequestNumber
   if (waitingPrNum !== undefined) {
     const waitingPr = await getPullRequest(ctx, waitingPrNum)
+    core.info(`Found recorded PR ${stringify(waitingPr)}.`)
     if (isWaitingMergePr(waitingPr, condition)) {
       core.info(`Waiting PR #${waitingPrNum} to be merged.`)
       return {...recordBody, editing: false}

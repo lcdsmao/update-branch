@@ -135,6 +135,7 @@ function updateBranch(ctx, recordBody, condition) {
         const waitingPrNum = recordBody.waitingMergePullRequestNumber;
         if (waitingPrNum !== undefined) {
             const waitingPr = yield pullRequest_1.getPullRequest(ctx, waitingPrNum);
+            core.info(`Found recorded PR ${utils_1.stringify(waitingPr)}.`);
             if (utils_1.isWaitingMergePr(waitingPr, condition)) {
                 core.info(`Waiting PR #${waitingPrNum} to be merged.`);
                 return Object.assign(Object.assign({}, recordBody), { editing: false });
