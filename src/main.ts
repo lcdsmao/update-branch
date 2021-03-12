@@ -45,7 +45,7 @@ async function run(): Promise<void> {
       statusChecks
     }
     // Get after all pr status become available
-    const waitingPrNum = recordBody.waitingPullRequestNumber
+    const waitingPrNum = recordBody.waitingMergePullRequestNumber
     if (waitingPrNum !== undefined) {
       const waitingPr = await getPullRequest(ctx, waitingPrNum)
       if (isWaitingMergePr(waitingPr, condition)) {
@@ -75,7 +75,7 @@ async function run(): Promise<void> {
     })
     await updateRecordIssueBody(ctx, recordIssue, {
       editing: false,
-      waitingPullRequestNumber: pendingPr.number
+      waitingMergePullRequestNumber: pendingPr.number
     })
   } catch (error) {
     core.setFailed(error.message)
