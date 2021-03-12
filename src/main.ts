@@ -2,14 +2,19 @@ import * as core from '@actions/core'
 import * as github from '@actions/github'
 import {getIssue, updateIssue} from './issue'
 import {getPullRequest, listAvailablePullRequests} from './pullRequest'
-import {GhContext, IssueInfo, RecordBody} from './type'
+import {Condition, GhContext, IssueInfo, RecordBody} from './type'
 import {isPendingPr, isWaitingMergePr, stringify} from './utils'
 
 async function run(): Promise<void> {
   try {
-    const approvedCount = parseInt(core.getInput('approvedCount'))
     const recordIssueNumber = parseInt(core.getInput('recordIssueNumber'))
+    const approvedCount = parseInt(core.getInput('approvedCount'))
+    const statusChecks = core
+      .getInput('statusChecks')
+      .split('\n')
+      .filter(s => s !== '')
     const token = core.getInput('token')
+
     const octokit = github.getOctokit(token)
     const {owner, repo} = github.context.repo
     const ctx: GhContext = {octokit, owner, repo}
@@ -35,11 +40,15 @@ async function run(): Promise<void> {
       throw e
     }
 
+    const condition: Condition = {
+      approvedCount,
+      statusChecks
+    }
     // Get after all pr status become available
     const waitingPrNum = recordBody.waitingPullRequestNumber
     if (waitingPrNum !== undefined) {
       const waitingPr = await getPullRequest(ctx, waitingPrNum)
-      if (isWaitingMergePr(waitingPr, approvedCount)) {
+      if (isWaitingMergePr(waitingPr, condition)) {
         core.info(
           `Waiting PR #${waitingPrNum} to be merged. If you have any problem with this PR, please editing issue #${recordIssueNumber} body.`
         )
@@ -48,7 +57,7 @@ async function run(): Promise<void> {
       }
     }
 
-    const pendingPrs = availablePrs.filter(pr => isPendingPr(pr, approvedCount))
+    const pendingPrs = availablePrs.filter(pr => isPendingPr(pr, condition))
     const pendingPr =
       pendingPrs.find(pr => pr.number === waitingPrNum) || pendingPrs[0]
     if (pendingPr === undefined) {
