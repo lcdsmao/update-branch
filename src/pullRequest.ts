@@ -77,6 +77,14 @@ export async function listAvailablePullRequests(
   )
 }
 
+export async function updateBranch(ctx: GhContext, num: number): Promise<void> {
+  await ctx.octokit.pulls.updateBranch({
+    owner: ctx.owner,
+    repo: ctx.repo,
+    pull_number: num
+  })
+}
+
 async function listPullRequests(ctx: GhContext): Promise<PullRequestInfo[]> {
   const result: RepositoryPullRequestsInfo = await ctx.octokit.graphql(
     `query ($owner: String!, $repo: String!) {

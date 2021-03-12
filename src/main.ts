@@ -1,8 +1,18 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 import {getIssue, updateIssue} from './issue'
-import {getPullRequest, listAvailablePullRequests} from './pullRequest'
-import {Condition, GhContext, IssueInfo, RecordBody} from './type'
+import {
+  getPullRequest,
+  listAvailablePullRequests,
+  updateBranch
+} from './pullRequest'
+import {
+  Condition,
+  GhContext,
+  IssueInfo,
+  MergeStateStatus,
+  RecordBody
+} from './type'
 import {isPendingPr, isWaitingMergePr, stringify} from './utils'
 
 async function run(): Promise<void> {
@@ -38,7 +48,11 @@ async function run(): Promise<void> {
 
     let updatedIssueBody: RecordBody = {editing: false}
     try {
-      updatedIssueBody = await updateBranch(ctx, recordBody, condition)
+      updatedIssueBody = await findPendingPrAndUpdateBranch(
+        ctx,
+        recordBody,
+        condition
+      )
     } finally {
       await updateRecordIssueBody(ctx, recordIssue, updatedIssueBody)
     }
@@ -47,7 +61,7 @@ async function run(): Promise<void> {
   }
 }
 
-async function updateBranch(
+async function findPendingPrAndUpdateBranch(
   ctx: GhContext,
   recordBody: RecordBody,
   condition: Condition
@@ -59,24 +73,31 @@ async function updateBranch(
     const waitingPr = await getPullRequest(ctx, waitingPrNum)
     core.info(`Found recorded PR ${stringify(waitingPr)}.`)
     if (isWaitingMergePr(waitingPr, condition)) {
-      core.info(`Waiting PR #${waitingPrNum} to be merged.`)
-      return {...recordBody, editing: false}
+      if (waitingPr.mergeStateStatus === MergeStateStatus.BLOCKED) {
+        core.info(`Waiting PR #${waitingPrNum} to be merged.`)
+        return {...recordBody, editing: false}
+      } else if (waitingPr.mergeStateStatus === MergeStateStatus.BEHIND) {
+        updateBranch(ctx, waitingPrNum)
+        core.info(`Update branch and wait PR #${waitingPrNum} to be merged.`)
+        return {...recordBody, editing: false}
+      }
     }
+    core.info(
+      `Recorded PR #${waitingPrNum} can not be merged. Try to find other PR that is pending update branch.`
+    )
   }
 
   const pendingPrs = availablePrs.filter(pr => isPendingPr(pr, condition))
   const pendingPr =
     pendingPrs.find(pr => pr.number === waitingPrNum) || pendingPrs[0]
   if (pendingPr === undefined) {
-    core.info('No merge pending PR. Exit.')
+    core.info('Found no PR that is pending update branch.')
     return {editing: false}
   }
-  core.info(`Found merge pending PR: ${pendingPr.title}, #${pendingPr.number}.`)
-  await ctx.octokit.pulls.updateBranch({
-    owner: ctx.owner,
-    repo: ctx.repo,
-    pull_number: pendingPr.number
-  })
+  core.info(
+    `Found PR: ${pendingPr.title}, #${pendingPr.number} and try to update branch.`
+  )
+  updateBranch(ctx, pendingPr.number)
   return {
     editing: false,
     waitingMergePullRequestNumber: pendingPr.number

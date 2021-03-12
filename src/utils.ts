@@ -15,7 +15,6 @@ export function isWaitingMergePr(
     isApprovedPr(pr, condition) &&
     !pr.merged &&
     pr.mergeable === MergeableState.MERGEABLE &&
-    pr.mergeStateStatus === MergeStateStatus.BLOCKED &&
     pr.commits.nodes[0].commit.statusCheckRollup.state === StatusState.PENDING
   )
 }
