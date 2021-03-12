@@ -112,13 +112,13 @@ function run() {
             const ctx = { octokit, owner, repo };
             const { recordIssue, recordBody } = yield getRecordIssue(ctx, recordIssueNumber);
             if (recordBody.editing) {
-                core.info('Editing record issue. Exit.');
+                core.info('Other actions are editing record. Exit.');
                 return;
             }
             yield updateRecordIssueBody(ctx, recordIssue, Object.assign(Object.assign({}, recordBody), { editing: true }));
             let newIssueBody = { editing: false };
             try {
-                newIssueBody = yield findPendingPrAndUpdateBranch(ctx, recordBody, condition);
+                newIssueBody = yield findBehindPrAndUpdateBranch(ctx, recordBody, condition);
             }
             finally {
                 yield updateRecordIssueBody(ctx, recordIssue, newIssueBody);
@@ -129,38 +129,38 @@ function run() {
         }
     });
 }
-function findPendingPrAndUpdateBranch(ctx, recordBody, condition) {
+function findBehindPrAndUpdateBranch(ctx, recordBody, condition) {
     return __awaiter(this, void 0, void 0, function* () {
         const availablePrs = yield pullRequest_1.listAvailablePullRequests(ctx);
-        // Get waiting merge pr after all pr status become available
-        const waitingPrNum = recordBody.waitingMergePullRequestNumber;
-        if (waitingPrNum !== undefined) {
-            const waitingPr = yield pullRequest_1.getPullRequest(ctx, waitingPrNum);
-            core.info(`Found recorded PR ${utils_1.stringify(waitingPr)}.`);
-            if (utils_1.isWaitingMergePr(waitingPr, condition)) {
-                if (waitingPr.mergeStateStatus === type_1.MergeStateStatus.BLOCKED) {
-                    core.info(`Waiting PR #${waitingPrNum} to be merged.`);
+        // Get pending merge pr after all pr status become available
+        const pendingMergePrNum = recordBody.pendingMergePullRequestNumber;
+        if (pendingMergePrNum !== undefined) {
+            const pendingMergePr = yield pullRequest_1.getPullRequest(ctx, pendingMergePrNum);
+            core.info(`Found pending merge PR ${utils_1.stringify(pendingMergePr)}.`);
+            if (utils_1.isPendingMergePr(pendingMergePr, condition)) {
+                if (pendingMergePr.mergeStateStatus === type_1.MergeStateStatus.BLOCKED) {
+                    core.info(`Wait PR #${pendingMergePrNum} to be merged.`);
                     return Object.assign(Object.assign({}, recordBody), { editing: false });
                 }
-                else if (waitingPr.mergeStateStatus === type_1.MergeStateStatus.BEHIND) {
-                    pullRequest_1.updateBranch(ctx, waitingPrNum);
-                    core.info(`Update branch and wait PR #${waitingPrNum} to be merged.`);
+                else if (pendingMergePr.mergeStateStatus === type_1.MergeStateStatus.BEHIND) {
+                    pullRequest_1.updateBranch(ctx, pendingMergePrNum);
+                    core.info(`Update branch and wait PR #${pendingMergePrNum} to be merged.`);
                     return Object.assign(Object.assign({}, recordBody), { editing: false });
                 }
             }
-            core.info(`Recorded PR #${waitingPrNum} can not be merged. Try to find other PR that is pending update branch.`);
+            core.info(`Pending merge PR #${pendingMergePrNum} can not be merged. Try to find other PR that needs update branch.`);
         }
-        const pendingPrs = availablePrs.filter(pr => utils_1.isPendingPr(pr, condition));
-        const pendingPr = pendingPrs.find(pr => pr.number === waitingPrNum) || pendingPrs[0];
-        if (pendingPr === undefined) {
-            core.info('Found no PR that is pending update branch.');
+        const behindPrs = availablePrs.filter(pr => utils_1.isStatusCheckPassAndBehindPr(pr, condition));
+        const behindPr = behindPrs.find(pr => pr.number === pendingMergePrNum) || behindPrs[0];
+        if (behindPr === undefined) {
+            core.info('Found no PR that needs update branch.');
             return { editing: false };
         }
-        core.info(`Found PR: ${pendingPr.title}, #${pendingPr.number} and try to update branch.`);
-        pullRequest_1.updateBranch(ctx, pendingPr.number);
+        core.info(`Found PR: ${behindPr.title}, #${behindPr.number} and try to update branch.`);
+        pullRequest_1.updateBranch(ctx, behindPr.number);
         return {
             editing: false,
-            waitingMergePullRequestNumber: pendingPr.number
+            pendingMergePullRequestNumber: behindPr.number
         };
     });
 }
@@ -387,23 +387,23 @@ var CheckConclusionState;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.stringify = exports.isPendingPr = exports.isWaitingMergePr = void 0;
+exports.stringify = exports.isStatusCheckPassAndBehindPr = exports.isPendingMergePr = void 0;
 const type_1 = __nccwpck_require__(134);
-function isWaitingMergePr(pr, condition) {
+function isPendingMergePr(pr, condition) {
     return (isApprovedPr(pr, condition) &&
         !pr.merged &&
         pr.mergeable === type_1.MergeableState.MERGEABLE &&
         pr.commits.nodes[0].commit.statusCheckRollup.state === type_1.StatusState.PENDING);
 }
-exports.isWaitingMergePr = isWaitingMergePr;
-function isPendingPr(pr, condition) {
+exports.isPendingMergePr = isPendingMergePr;
+function isStatusCheckPassAndBehindPr(pr, condition) {
     return (isApprovedPr(pr, condition) &&
         !pr.merged &&
         pr.mergeable === type_1.MergeableState.MERGEABLE &&
         pr.mergeStateStatus === type_1.MergeStateStatus.BEHIND &&
         isStatusCheckSuccess(pr, condition));
 }
-exports.isPendingPr = isPendingPr;
+exports.isStatusCheckPassAndBehindPr = isStatusCheckPassAndBehindPr;
 function stringify(obj) {
     return JSON.stringify(obj);
 }
