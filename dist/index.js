@@ -213,6 +213,8 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.updateBranch = exports.listAvailablePullRequests = exports.getPullRequest = void 0;
 const async_retry_1 = __importDefault(__nccwpck_require__(3415));
 const type_1 = __nccwpck_require__(134);
+const firstPrNum = 40;
+const checksNum = 40;
 function getPullRequest(ctx, num) {
     return __awaiter(this, void 0, void 0, function* () {
         const result = yield ctx.octokit.graphql(`query ($owner: String!, $repo: String!, $num: Int!) {
@@ -233,7 +235,7 @@ function getPullRequest(ctx, num) {
               nodes {
                 commit {
                   statusCheckRollup {
-                    contexts(first: 20) {
+                    contexts(first: ${checksNum}) {
                       nodes {
                         ... on CheckRun {
                           name
@@ -289,7 +291,7 @@ function listPullRequests(ctx) {
     return __awaiter(this, void 0, void 0, function* () {
         const result = yield ctx.octokit.graphql(`query ($owner: String!, $repo: String!) {
         repository(name: $repo, owner: $owner) {
-          pullRequests(first: 20, states: OPEN) {
+          pullRequests(first: ${firstPrNum}, states: OPEN) {
             nodes {
               title
               number
@@ -306,7 +308,7 @@ function listPullRequests(ctx) {
                 nodes {
                   commit {
                     statusCheckRollup {
-                      contexts(first: 20) {
+                      contexts(first: ${checksNum}) {
                         nodes {
                           ... on CheckRun {
                             name

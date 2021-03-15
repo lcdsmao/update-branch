@@ -7,6 +7,9 @@ import {
   RepositoryPullRequestsInfo
 } from './type'
 
+const firstPrNum = 40
+const checksNum = 40
+
 export async function getPullRequest(
   ctx: GhContext,
   num: number
@@ -30,7 +33,7 @@ export async function getPullRequest(
               nodes {
                 commit {
                   statusCheckRollup {
-                    contexts(first: 20) {
+                    contexts(first: ${checksNum}) {
                       nodes {
                         ... on CheckRun {
                           name
@@ -89,7 +92,7 @@ async function listPullRequests(ctx: GhContext): Promise<PullRequestInfo[]> {
   const result: RepositoryPullRequestsInfo = await ctx.octokit.graphql(
     `query ($owner: String!, $repo: String!) {
         repository(name: $repo, owner: $owner) {
-          pullRequests(first: 20, states: OPEN) {
+          pullRequests(first: ${firstPrNum}, states: OPEN) {
             nodes {
               title
               number
@@ -106,7 +109,7 @@ async function listPullRequests(ctx: GhContext): Promise<PullRequestInfo[]> {
                 nodes {
                   commit {
                     statusCheckRollup {
-                      contexts(first: 20) {
+                      contexts(first: ${checksNum}) {
                         nodes {
                           ... on CheckRun {
                             name
