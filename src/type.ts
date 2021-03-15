@@ -32,6 +32,14 @@ export enum MergeableState {
   UNKNOWN = 'UNKNOWN'
 }
 
+export enum StatusState {
+  ERROR = 'ERROR',
+  EXPECTED = 'EXPECTED',
+  FAILURE = 'FAILURE',
+  PENDING = 'PENDING',
+  SUCCESS = 'SUCCESS'
+}
+
 export enum CheckConclusionState {
   ACTION_REQUIRED = 'ACTION_REQUIRED',
   CANCELLED = 'CANCELLED',
@@ -68,17 +76,15 @@ export interface IssueInfo {
 
 export interface CommitInfo {
   commit: {
-    checkSuites: {
-      nodes: CheckSuiteInfo[]
-    }
+    statusCheckRollup: StatusCheckRollupInfo
   }
 }
 
-export interface CheckSuiteInfo {
-  checkRuns: {
+export interface StatusCheckRollupInfo {
+  state: StatusState
+  contexts: {
     nodes: CheckRunInfo[]
   }
-  conclusion: CheckConclusionState
 }
 
 export interface CheckRunInfo {

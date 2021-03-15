@@ -232,16 +232,16 @@ function getPullRequest(ctx, num) {
             commits(last: 1) {
               nodes {
                 commit {
-                  checkSuites(last: 1) {
-                    nodes {
-                      checkRuns(first: 20) {
-                        nodes {
+                  statusCheckRollup {
+                    contexts(first: 20) {
+                      nodes {
+                        ... on CheckRun {
                           name
                           conclusion
                         }
                       }
-                      conclusion
                     }
+                    state
                   }
                 }
               }
@@ -305,16 +305,16 @@ function listPullRequests(ctx) {
               commits(last: 1) {
                 nodes {
                   commit {
-                    checkSuites(last: 1) {
-                      nodes {
-                        checkRuns(first: 20) {
-                          nodes {
+                    statusCheckRollup {
+                      contexts(first: 20) {
+                        nodes {
+                          ... on CheckRun {
                             name
                             conclusion
                           }
                         }
-                        conclusion
                       }
+                      state
                     }
                   }
                 }
@@ -342,7 +342,7 @@ function listPullRequests(ctx) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.CheckConclusionState = exports.MergeableState = exports.MergeStateStatus = void 0;
+exports.CheckConclusionState = exports.StatusState = exports.MergeableState = exports.MergeStateStatus = void 0;
 var MergeStateStatus;
 (function (MergeStateStatus) {
     MergeStateStatus["BEHIND"] = "BEHIND";
@@ -359,6 +359,14 @@ var MergeableState;
     MergeableState["MERGEABLE"] = "MERGEABLE";
     MergeableState["UNKNOWN"] = "UNKNOWN";
 })(MergeableState = exports.MergeableState || (exports.MergeableState = {}));
+var StatusState;
+(function (StatusState) {
+    StatusState["ERROR"] = "ERROR";
+    StatusState["EXPECTED"] = "EXPECTED";
+    StatusState["FAILURE"] = "FAILURE";
+    StatusState["PENDING"] = "PENDING";
+    StatusState["SUCCESS"] = "SUCCESS";
+})(StatusState = exports.StatusState || (exports.StatusState = {}));
 var CheckConclusionState;
 (function (CheckConclusionState) {
     CheckConclusionState["ACTION_REQUIRED"] = "ACTION_REQUIRED";
@@ -387,8 +395,7 @@ function isPendingMergePr(pr, condition) {
     return (isApprovedPr(pr, condition) &&
         !pr.merged &&
         pr.mergeable === type_1.MergeableState.MERGEABLE &&
-        pr.commits.nodes[0].commit.checkSuites.nodes[0].conclusion ===
-            type_1.CheckConclusionState.ACTION_REQUIRED);
+        pr.commits.nodes[0].commit.statusCheckRollup.state === type_1.StatusState.PENDING);
 }
 exports.isPendingMergePr = isPendingMergePr;
 function isStatusCheckPassAndBehindPr(pr, condition) {
@@ -408,13 +415,13 @@ function isApprovedPr(pr, condition) {
         pr.reviews.totalCount >= pr.reviewRequests.totalCount);
 }
 function isStatusCheckSuccess(pr, condition) {
-    const check = pr.commits.nodes[0].commit.checkSuites.nodes[0];
+    const check = pr.commits.nodes[0].commit.statusCheckRollup;
     if (condition.statusChecks.length) {
-        const conclusions = new Map(check.checkRuns.nodes.map(i => [i.name, i.conclusion]));
+        const conclusions = new Map(check.contexts.nodes.map(i => [i.name, i.conclusion]));
         return condition.statusChecks.every(name => conclusions.get(name) === type_1.CheckConclusionState.SUCCESS);
     }
     else {
-        return check.conclusion === type_1.CheckConclusionState.SUCCESS;
+        return check.state === type_1.StatusState.SUCCESS;
     }
 }
 

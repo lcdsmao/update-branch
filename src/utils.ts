@@ -3,7 +3,8 @@ import {
   Condition,
   MergeableState,
   MergeStateStatus,
-  PullRequestInfo
+  PullRequestInfo,
+  StatusState
 } from './type'
 
 export function isPendingMergePr(
@@ -14,8 +15,7 @@ export function isPendingMergePr(
     isApprovedPr(pr, condition) &&
     !pr.merged &&
     pr.mergeable === MergeableState.MERGEABLE &&
-    pr.commits.nodes[0].commit.checkSuites.nodes[0].conclusion ===
-      CheckConclusionState.ACTION_REQUIRED
+    pr.commits.nodes[0].commit.statusCheckRollup.state === StatusState.PENDING
   )
 }
 
@@ -47,15 +47,15 @@ function isStatusCheckSuccess(
   pr: PullRequestInfo,
   condition: Condition
 ): boolean {
-  const check = pr.commits.nodes[0].commit.checkSuites.nodes[0]
+  const check = pr.commits.nodes[0].commit.statusCheckRollup
   if (condition.statusChecks.length) {
     const conclusions = new Map(
-      check.checkRuns.nodes.map(i => [i.name, i.conclusion])
+      check.contexts.nodes.map(i => [i.name, i.conclusion])
     )
     return condition.statusChecks.every(
       name => conclusions.get(name) === CheckConclusionState.SUCCESS
     )
   } else {
-    return check.conclusion === CheckConclusionState.SUCCESS
+    return check.state === StatusState.SUCCESS
   }
 }
