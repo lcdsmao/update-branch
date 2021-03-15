@@ -27,6 +27,7 @@ async function run(): Promise<void> {
       .getInput('statusChecks')
       .split('\n')
       .filter(s => s !== '')
+    core.info(JSON.stringify(statusChecks))
     const token = core.getInput('token')
     const condition: Condition = {
       approvedCount,
@@ -93,6 +94,7 @@ async function findBehindPrAndUpdateBranch(
     )
   }
 
+  core.info(JSON.stringify(availablePrs))
   const behindPrs = availablePrs.filter(pr =>
     isStatusCheckPassAndBehindPr(pr, condition)
   )
