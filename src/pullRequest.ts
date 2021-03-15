@@ -29,16 +29,16 @@ export async function getPullRequest(
             commits(last: 1) {
               nodes {
                 commit {
-                  statusCheckRollup {
-                    contexts(first: 20) {
-                      nodes {
-                        ... on CheckRun {
+                  checkSuites(last: 1) {
+                    nodes {
+                      checkRuns(first: 20) {
+                        nodes {
                           name
                           conclusion
                         }
                       }
+                      conclusion
                     }
-                    state
                   }
                 }
               }
@@ -105,16 +105,16 @@ async function listPullRequests(ctx: GhContext): Promise<PullRequestInfo[]> {
               commits(last: 1) {
                 nodes {
                   commit {
-                    statusCheckRollup {
-                      contexts(first: 20) {
-                        nodes {
-                          ... on CheckRun {
+                    checkSuites(last: 1) {
+                      nodes {
+                        checkRuns(first: 20) {
+                          nodes {
                             name
                             conclusion
                           }
                         }
+                        conclusion
                       }
-                      state
                     }
                   }
                 }
