@@ -1,15 +1,39 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 import {getIssue, updateIssue} from './issue'
-import {getPullRequest, listAvailablePullRequests} from './pullRequest'
-import {GhContext, IssueInfo, RecordBody} from './type'
-import {isPendingPr, isWaitingMergePr, stringify} from './utils'
+import {
+  getPullRequest,
+  listAvailablePullRequests,
+  updateBranch
+} from './pullRequest'
+import {
+  Condition,
+  GhContext,
+  IssueInfo,
+  MergeStateStatus,
+  RecordBody
+} from './type'
+import {
+  isStatusCheckPassAndBehindPr,
+  isPendingMergePr,
+  stringify
+} from './utils'
 
 async function run(): Promise<void> {
   try {
-    const approvedCount = parseInt(core.getInput('approvedCount'))
     const recordIssueNumber = parseInt(core.getInput('recordIssueNumber'))
+    const approvedCount = parseInt(core.getInput('approvedCount'))
+    const statusChecks = core
+      .getInput('statusChecks')
+      .split('\n')
+      .filter(s => s !== '')
+    core.info(JSON.stringify(statusChecks))
     const token = core.getInput('token')
+    const condition: Condition = {
+      approvedCount,
+      statusChecks
+    }
+
     const octokit = github.getOctokit(token)
     const {owner, repo} = github.context.repo
     const ctx: GhContext = {octokit, owner, repo}
@@ -19,7 +43,7 @@ async function run(): Promise<void> {
       recordIssueNumber
     )
     if (recordBody.editing) {
-      core.info('Editing record issue. Exit.')
+      core.info('Other actions are editing record. Exit.')
       return
     }
     await updateRecordIssueBody(ctx, recordIssue, {
@@ -27,49 +51,66 @@ async function run(): Promise<void> {
       editing: true
     })
 
-    let availablePrs
+    let newIssueBody: RecordBody = {editing: false}
     try {
-      availablePrs = await listAvailablePullRequests(ctx)
-    } catch (e) {
-      updateRecordIssueBody(ctx, recordIssue, {editing: false})
-      throw e
+      newIssueBody = await findBehindPrAndUpdateBranch(
+        ctx,
+        recordBody,
+        condition
+      )
+    } finally {
+      await updateRecordIssueBody(ctx, recordIssue, newIssueBody)
     }
-
-    // Get after all pr status become available
-    const waitingPrNum = recordBody.waitingPullRequestNumber
-    if (waitingPrNum !== undefined) {
-      const waitingPr = await getPullRequest(ctx, waitingPrNum)
-      if (isWaitingMergePr(waitingPr, approvedCount)) {
-        core.info(
-          `Waiting PR #${waitingPrNum} to be merged. If you have any problem with this PR, please editing issue #${recordIssueNumber} body.`
-        )
-        updateRecordIssueBody(ctx, recordIssue, {...recordBody, editing: false})
-        return
-      }
-    }
-
-    const pendingPrs = availablePrs.filter(pr => isPendingPr(pr, approvedCount))
-    const pendingPr =
-      pendingPrs.find(pr => pr.number === waitingPrNum) || pendingPrs[0]
-    if (pendingPr === undefined) {
-      core.info('No merge pending PR. Exit.')
-      await updateRecordIssueBody(ctx, recordIssue, {editing: false})
-      return
-    }
-    core.info(
-      `Found merge pending PR: ${pendingPr.title}, #${pendingPr.number}.`
-    )
-    await octokit.pulls.updateBranch({
-      owner,
-      repo,
-      pull_number: pendingPr.number
-    })
-    await updateRecordIssueBody(ctx, recordIssue, {
-      editing: false,
-      waitingPullRequestNumber: pendingPr.number
-    })
   } catch (error) {
     core.setFailed(error.message)
+  }
+}
+
+async function findBehindPrAndUpdateBranch(
+  ctx: GhContext,
+  recordBody: RecordBody,
+  condition: Condition
+): Promise<RecordBody> {
+  const availablePrs = await listAvailablePullRequests(ctx)
+  // Get pending merge pr after all pr status become available
+  const pendingMergePrNum = recordBody.pendingMergePullRequestNumber
+  if (pendingMergePrNum !== undefined) {
+    const pendingMergePr = await getPullRequest(ctx, pendingMergePrNum)
+    core.info(`Found pending merge PR ${stringify(pendingMergePr)}.`)
+    if (isPendingMergePr(pendingMergePr, condition)) {
+      if (pendingMergePr.mergeStateStatus === MergeStateStatus.BLOCKED) {
+        core.info(`Wait PR #${pendingMergePrNum} to be merged.`)
+        return {...recordBody, editing: false}
+      } else if (pendingMergePr.mergeStateStatus === MergeStateStatus.BEHIND) {
+        updateBranch(ctx, pendingMergePrNum)
+        core.info(
+          `Update branch and wait PR #${pendingMergePrNum} to be merged.`
+        )
+        return {...recordBody, editing: false}
+      }
+    }
+    core.info(
+      `Pending merge PR #${pendingMergePrNum} can not be merged. Try to find other PR that needs update branch.`
+    )
+  }
+
+  core.info(JSON.stringify(availablePrs))
+  const behindPrs = availablePrs.filter(pr =>
+    isStatusCheckPassAndBehindPr(pr, condition)
+  )
+  const behindPr =
+    behindPrs.find(pr => pr.number === pendingMergePrNum) || behindPrs[0]
+  if (behindPr === undefined) {
+    core.info('Found no PR that needs update branch.')
+    return {editing: false}
+  }
+  core.info(
+    `Found PR: ${behindPr.title}, #${behindPr.number} and try to update branch.`
+  )
+  updateBranch(ctx, behindPr.number)
+  return {
+    editing: false,
+    pendingMergePullRequestNumber: behindPr.number
   }
 }
 

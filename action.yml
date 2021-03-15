@@ -5,13 +5,16 @@ inputs:
   token:
     required: true
     description: 'Github Token'
+  recordIssueNumber:
+    required: true
+    description: 'Record working progress'
   approvedCount:
     required: true
     description: 'At least the approved count of the branch to update'
     default: '0'
-  recordIssueNumber:
+  statusChecks:
     required: true
-    description: 'Record working progress'
+    description: 'Multiple status checks required to be success'
 runs:
   using: 'node12'
   main: 'dist/index.js'

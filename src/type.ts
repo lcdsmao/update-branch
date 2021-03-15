@@ -6,9 +6,14 @@ export interface GhContext {
   repo: string
 }
 
+export interface Condition {
+  approvedCount: number
+  statusChecks: string[]
+}
+
 export interface RecordBody {
   editing?: boolean
-  waitingPullRequestNumber?: number
+  pendingMergePullRequestNumber?: number
 }
 
 export enum MergeStateStatus {
@@ -35,6 +40,18 @@ export enum StatusState {
   SUCCESS = 'SUCCESS'
 }
 
+export enum CheckConclusionState {
+  ACTION_REQUIRED = 'ACTION_REQUIRED',
+  CANCELLED = 'CANCELLED',
+  FAILURE = 'FAILURE',
+  NEUTRAL = 'NEUTRAL',
+  SKIPPED = 'SKIPPED',
+  STALE = 'STALE',
+  STARTUP_FAILURE = 'STARTUP_FAILURE',
+  SUCCESS = 'SUCCESS',
+  TIMED_OUT = 'TIMED_OUT'
+}
+
 export interface PullRequestInfo {
   title: string
   reviews: {
@@ -58,7 +75,21 @@ export interface IssueInfo {
 }
 
 export interface CommitInfo {
-  statusCheckRollup: StatusState
+  commit: {
+    statusCheckRollup: StatusCheckRollupInfo
+  }
+}
+
+export interface StatusCheckRollupInfo {
+  state: StatusState
+  contexts: {
+    nodes: CheckRunInfo[]
+  }
+}
+
+export interface CheckRunInfo {
+  name: string
+  conclusion: CheckConclusionState
 }
 
 export interface RepositoryData<T> {

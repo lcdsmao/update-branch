@@ -24,3 +24,6 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           approvedCount: 2
           recordIssueNumber: 36
+          statusChecks: |
+            build
+            test
