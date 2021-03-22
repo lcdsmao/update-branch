@@ -145,6 +145,7 @@ function findBehindPrAndUpdateBranch(ctx, recordBody, condition) {
                 }
                 else if (pendingMergePr.mergeStateStatus === type_1.MergeStateStatus.BEHIND) {
                     pullRequest_1.updateBranch(ctx, pendingMergePrNum);
+                    pullRequest_1.enablePullRequestAutoMerge(ctx, pendingMergePr.id);
                     core.info(`Update branch and wait PR #${pendingMergePrNum} to be merged.`);
                     return Object.assign(Object.assign({}, recordBody), { editing: false });
                 }
@@ -160,6 +161,7 @@ function findBehindPrAndUpdateBranch(ctx, recordBody, condition) {
         }
         core.info(`Found PR: ${behindPr.title}, #${behindPr.number} and try to update branch.`);
         pullRequest_1.updateBranch(ctx, behindPr.number);
+        pullRequest_1.enablePullRequestAutoMerge(ctx, behindPr.id);
         return {
             editing: false,
             pendingMergePullRequestNumber: behindPr.number
@@ -210,7 +212,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.updateBranch = exports.listAvailablePullRequests = exports.getPullRequest = void 0;
+exports.enablePullRequestAutoMerge = exports.updateBranch = exports.listAvailablePullRequests = exports.getPullRequest = void 0;
 const async_retry_1 = __importDefault(__nccwpck_require__(3415));
 const type_1 = __nccwpck_require__(134);
 const firstPrNum = 40;
@@ -220,6 +222,7 @@ function getPullRequest(ctx, num) {
         const result = yield ctx.octokit.graphql(`query ($owner: String!, $repo: String!, $num: Int!) {
         repository(name: $repo, owner: $owner) {
           pullRequest(number: $num) {
+            id
             title
             number
             merged
@@ -287,12 +290,25 @@ function updateBranch(ctx, num) {
     });
 }
 exports.updateBranch = updateBranch;
+function enablePullRequestAutoMerge(ctx, prId) {
+    return __awaiter(this, void 0, void 0, function* () {
+        yield ctx.octokit.graphql(`mutation ($id: ID!) {
+      enablePullRequestAutoMerge(input: { pullRequestId: $id }) {
+        clientMutationId
+      }
+    }`, {
+            id: prId
+        });
+    });
+}
+exports.enablePullRequestAutoMerge = enablePullRequestAutoMerge;
 function listPullRequests(ctx) {
     return __awaiter(this, void 0, void 0, function* () {
         const result = yield ctx.octokit.graphql(`query ($owner: String!, $repo: String!) {
         repository(name: $repo, owner: $owner) {
           pullRequests(first: ${firstPrNum}, states: OPEN) {
             nodes {
+              id
               title
               number
               merged

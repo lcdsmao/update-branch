@@ -53,6 +53,7 @@ export enum CheckConclusionState {
 }
 
 export interface PullRequestInfo {
+  id: string
   title: string
   reviews: {
     totalCount: number

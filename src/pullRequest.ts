@@ -18,6 +18,7 @@ export async function getPullRequest(
     `query ($owner: String!, $repo: String!, $num: Int!) {
         repository(name: $repo, owner: $owner) {
           pullRequest(number: $num) {
+            id
             title
             number
             merged
@@ -88,12 +89,26 @@ export async function updateBranch(ctx: GhContext, num: number): Promise<void> {
   })
 }
 
+export async function enablePullRequestAutoMerge(ctx: GhContext, prId: String) {
+  await ctx.octokit.graphql(
+    `mutation ($id: ID!) {
+      enablePullRequestAutoMerge(input: { pullRequestId: $id }) {
+        clientMutationId
+      }
+    }`,
+    {
+      id: prId
+    }
+  )
+}
+
 async function listPullRequests(ctx: GhContext): Promise<PullRequestInfo[]> {
   const result: RepositoryPullRequestsInfo = await ctx.octokit.graphql(
     `query ($owner: String!, $repo: String!) {
         repository(name: $repo, owner: $owner) {
           pullRequests(first: ${firstPrNum}, states: OPEN) {
             nodes {
+              id
               title
               number
               merged

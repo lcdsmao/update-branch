@@ -4,7 +4,8 @@ import {getIssue, updateIssue} from './issue'
 import {
   getPullRequest,
   listAvailablePullRequests,
-  updateBranch
+  updateBranch,
+  enablePullRequestAutoMerge
 } from './pullRequest'
 import {
   Condition,
@@ -83,6 +84,7 @@ async function findBehindPrAndUpdateBranch(
         return {...recordBody, editing: false}
       } else if (pendingMergePr.mergeStateStatus === MergeStateStatus.BEHIND) {
         updateBranch(ctx, pendingMergePrNum)
+        enablePullRequestAutoMerge(ctx, pendingMergePr.id)
         core.info(
           `Update branch and wait PR #${pendingMergePrNum} to be merged.`
         )
@@ -108,6 +110,7 @@ async function findBehindPrAndUpdateBranch(
     `Found PR: ${behindPr.title}, #${behindPr.number} and try to update branch.`
   )
   updateBranch(ctx, behindPr.number)
+  enablePullRequestAutoMerge(ctx, behindPr.id)
   return {
     editing: false,
     pendingMergePullRequestNumber: behindPr.number
