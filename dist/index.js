@@ -102,7 +102,7 @@ function run() {
                 .getInput('statusChecks')
                 .split('\n')
                 .filter(s => s !== '');
-            core.info(JSON.stringify(statusChecks));
+            // core.info(JSON.stringify(statusChecks))
             const token = core.getInput('token');
             const condition = {
                 approvedCount,
@@ -152,7 +152,7 @@ function findBehindPrAndUpdateBranch(ctx, recordBody, condition) {
             }
             core.info(`Pending merge PR #${pendingMergePrNum} can not be merged. Try to find other PR that needs update branch.`);
         }
-        core.info(JSON.stringify(availablePrs));
+        // core.info(JSON.stringify(availablePrs))
         const behindPrs = availablePrs.filter(pr => utils_1.isStatusCheckPassAndBehindPr(pr, condition));
         const behindPr = behindPrs.find(pr => pr.number === pendingMergePrNum) || behindPrs[0];
         if (behindPr === undefined) {
