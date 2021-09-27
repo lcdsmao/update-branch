@@ -77,13 +77,17 @@ export interface CommitInfo {
 export interface StatusCheckRollupInfo {
   state: StatusState
   contexts: {
-    nodes: CheckRunInfo[]
+    nodes: StatusCheckInfo[]
   }
 }
 
-export interface CheckRunInfo {
-  name: string
-  conclusion: CheckConclusionState
+export interface StatusCheckInfo {
+  // on CheckRun
+  name: string | undefined
+  conclusion: CheckConclusionState | undefined
+  // on StatusContext
+  context: string | undefined
+  state: StatusState | undefined
 }
 
 export interface RepositoryData<T> {

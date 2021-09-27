@@ -39,6 +39,10 @@ export async function getPullRequest(
                           name
                           conclusion
                         }
+                        ... on StatusContext {
+                          context
+                          state
+                        }
                       }
                     }
                     state
@@ -132,6 +136,10 @@ async function listPullRequests(ctx: GhContext): Promise<PullRequestInfo[]> {
                           ... on CheckRun {
                             name
                             conclusion
+                          }
+                          ... on StatusContext {
+                            context
+                            state
                           }
                         }
                       }
