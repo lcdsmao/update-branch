@@ -16,5 +16,5 @@ inputs:
     required: true
     description: 'Multiple status checks required to be success'
 runs:
-  using: 'node14'
+  using: 'node12'
   main: 'dist/index.js'
