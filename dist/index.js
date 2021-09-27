@@ -247,6 +247,10 @@ function getPullRequest(ctx, num) {
                           name
                           conclusion
                         }
+                        ... on StatusContext {
+                          context
+                          state
+                        }
                       }
                     }
                     state
@@ -333,6 +337,10 @@ function listPullRequests(ctx) {
                             name
                             conclusion
                           }
+                          ... on StatusContext {
+                            context
+                            state
+                          }
                         }
                       }
                       state
@@ -390,8 +398,11 @@ function isApprovedPr(pr, condition) {
 function isStatusCheckSuccess(pr, condition) {
     const check = pr.commits.nodes[0].commit.statusCheckRollup;
     if (condition.statusChecks.length) {
-        const conclusions = new Map(check.contexts.nodes.map(i => [i.name, i.conclusion]));
-        return condition.statusChecks.every(name => conclusions.get(name) === 'SUCCESS');
+        const nodeChecks = new Map(check.contexts.nodes.map(i => [i.name || i.context, i]));
+        return condition.statusChecks.every(name => {
+            const check = nodeChecks.get(name);
+            return (check === null || check === void 0 ? void 0 : check.conclusion) === 'SUCCESS' || (check === null || check === void 0 ? void 0 : check.state) === 'SUCCESS';
+        });
     }
     else {
         return check.state === 'SUCCESS';

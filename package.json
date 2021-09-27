@@ -1,6 +1,6 @@
 {
   "name": "update-branch",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "Merge your pull request in order.",
   "main": "lib/main.js",
