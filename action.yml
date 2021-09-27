@@ -1,6 +1,6 @@
 name: 'update-branch'
-description: 'Update Branch'
-author: 'ca-love'
+description: 'Merge your pull request in order when enabled the `Require branches to be up to date before merging`'
+author: 'lcdsmao'
 inputs:
   token:
     required: true
@@ -16,5 +16,5 @@ inputs:
     required: true
     description: 'Multiple status checks required to be success'
 runs:
-  using: 'node12'
+  using: 'node14'
   main: 'dist/index.js'

@@ -1,11 +1,4 @@
-import {
-  CheckConclusionState,
-  Condition,
-  MergeableState,
-  MergeStateStatus,
-  PullRequestInfo,
-  StatusState
-} from './type'
+import {Condition, PullRequestInfo} from './type'
 
 export function isPendingMergePr(
   pr: PullRequestInfo,

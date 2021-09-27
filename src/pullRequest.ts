@@ -1,7 +1,6 @@
 import retry from 'async-retry'
 import {
   GhContext,
-  MergeableState,
   PullRequestInfo,
   RepositoryPullRequestInfo,
   RepositoryPullRequestsInfo

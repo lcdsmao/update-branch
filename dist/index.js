@@ -91,7 +91,6 @@ const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
 const issue_1 = __nccwpck_require__(6018);
 const pullRequest_1 = __nccwpck_require__(7829);
-const type_1 = __nccwpck_require__(134);
 const utils_1 = __nccwpck_require__(918);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
@@ -126,26 +125,31 @@ function run() {
             }
         }
         catch (error) {
-            core.setFailed(error.message);
+            if (error instanceof Error) {
+                core.setFailed(error.message);
+            }
+            else if (typeof error === 'string') {
+                core.setFailed(error);
+            }
         }
     });
 }
 function findBehindPrAndUpdateBranch(ctx, recordBody, condition) {
     return __awaiter(this, void 0, void 0, function* () {
-        const availablePrs = yield pullRequest_1.listAvailablePullRequests(ctx);
+        const availablePrs = yield (0, pullRequest_1.listAvailablePullRequests)(ctx);
         // Get pending merge pr after all pr status become available
         const pendingMergePrNum = recordBody.pendingMergePullRequestNumber;
         if (pendingMergePrNum !== undefined) {
-            const pendingMergePr = yield pullRequest_1.getPullRequest(ctx, pendingMergePrNum);
-            core.info(`Found pending merge PR ${utils_1.stringify(pendingMergePr)}.`);
-            if (utils_1.isPendingMergePr(pendingMergePr, condition)) {
-                if (pendingMergePr.mergeStateStatus === type_1.MergeStateStatus.BLOCKED) {
+            const pendingMergePr = yield (0, pullRequest_1.getPullRequest)(ctx, pendingMergePrNum);
+            core.info(`Found pending merge PR ${(0, utils_1.stringify)(pendingMergePr)}.`);
+            if ((0, utils_1.isPendingMergePr)(pendingMergePr, condition)) {
+                if (pendingMergePr.mergeStateStatus === 'BLOCKED') {
                     core.info(`Wait PR #${pendingMergePrNum} to be merged.`);
                     return Object.assign(Object.assign({}, recordBody), { editing: false });
                 }
-                else if (pendingMergePr.mergeStateStatus === type_1.MergeStateStatus.BEHIND) {
-                    pullRequest_1.updateBranch(ctx, pendingMergePrNum);
-                    pullRequest_1.enablePullRequestAutoMerge(ctx, pendingMergePr.id);
+                else if (pendingMergePr.mergeStateStatus === 'BEHIND') {
+                    (0, pullRequest_1.updateBranch)(ctx, pendingMergePrNum);
+                    (0, pullRequest_1.enablePullRequestAutoMerge)(ctx, pendingMergePr.id);
                     core.info(`Update branch and wait PR #${pendingMergePrNum} to be merged.`);
                     return Object.assign(Object.assign({}, recordBody), { editing: false });
                 }
@@ -153,15 +157,15 @@ function findBehindPrAndUpdateBranch(ctx, recordBody, condition) {
             core.info(`Pending merge PR #${pendingMergePrNum} can not be merged. Try to find other PR that needs update branch.`);
         }
         // core.info(JSON.stringify(availablePrs))
-        const behindPrs = availablePrs.filter(pr => utils_1.isStatusCheckPassAndBehindPr(pr, condition));
+        const behindPrs = availablePrs.filter(pr => (0, utils_1.isStatusCheckPassAndBehindPr)(pr, condition));
         const behindPr = behindPrs.find(pr => pr.number === pendingMergePrNum) || behindPrs[0];
         if (behindPr === undefined) {
             core.info('Found no PR that needs update branch.');
             return { editing: false };
         }
         core.info(`Found PR: ${behindPr.title}, #${behindPr.number} and try to update branch.`);
-        pullRequest_1.updateBranch(ctx, behindPr.number);
-        pullRequest_1.enablePullRequestAutoMerge(ctx, behindPr.id);
+        (0, pullRequest_1.updateBranch)(ctx, behindPr.number);
+        (0, pullRequest_1.enablePullRequestAutoMerge)(ctx, behindPr.id);
         return {
             editing: false,
             pendingMergePullRequestNumber: behindPr.number
@@ -170,12 +174,12 @@ function findBehindPrAndUpdateBranch(ctx, recordBody, condition) {
 }
 function updateRecordIssueBody(ctx, recordIssue, body) {
     return __awaiter(this, void 0, void 0, function* () {
-        yield issue_1.updateIssue(ctx, Object.assign(Object.assign({}, recordIssue), { body: utils_1.stringify(body) }));
+        yield (0, issue_1.updateIssue)(ctx, Object.assign(Object.assign({}, recordIssue), { body: (0, utils_1.stringify)(body) }));
     });
 }
 function getRecordIssue(ctx, recordIssueNumber) {
     return __awaiter(this, void 0, void 0, function* () {
-        const recordIssue = yield issue_1.getIssue(ctx, recordIssueNumber);
+        const recordIssue = yield (0, issue_1.getIssue)(ctx, recordIssueNumber);
         let recordBody;
         try {
             recordBody = JSON.parse(recordIssue.body);
@@ -214,7 +218,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.enablePullRequestAutoMerge = exports.updateBranch = exports.listAvailablePullRequests = exports.getPullRequest = void 0;
 const async_retry_1 = __importDefault(__nccwpck_require__(3415));
-const type_1 = __nccwpck_require__(134);
 const firstPrNum = 40;
 const checksNum = 40;
 function getPullRequest(ctx, num) {
@@ -267,9 +270,9 @@ function getPullRequest(ctx, num) {
 exports.getPullRequest = getPullRequest;
 function listAvailablePullRequests(ctx) {
     return __awaiter(this, void 0, void 0, function* () {
-        return yield async_retry_1.default(() => __awaiter(this, void 0, void 0, function* () {
+        return yield (0, async_retry_1.default)(() => __awaiter(this, void 0, void 0, function* () {
             const pullRequests = yield listPullRequests(ctx);
-            const isAvailable = pullRequests.every(pr => pr.mergeable !== type_1.MergeableState.UNKNOWN);
+            const isAvailable = pullRequests.every(pr => pr.mergeable !== 'UNKNOWN');
             if (!isAvailable)
                 throw Error('Some PRs state are UNKNOWN.');
             return pullRequests;
@@ -354,73 +357,25 @@ function listPullRequests(ctx) {
 
 /***/ }),
 
-/***/ 134:
+/***/ 918:
 /***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.CheckConclusionState = exports.StatusState = exports.MergeableState = exports.MergeStateStatus = void 0;
-var MergeStateStatus;
-(function (MergeStateStatus) {
-    MergeStateStatus["BEHIND"] = "BEHIND";
-    MergeStateStatus["BLOCKED"] = "BLOCKED";
-    MergeStateStatus["CLEAN"] = "CLEAN";
-    MergeStateStatus["DIRTY"] = "DIRTY";
-    MergeStateStatus["HAS_HOOKS"] = "HAS_HOOKS";
-    MergeStateStatus["UNKNOWN"] = "UNKNOWN";
-    MergeStateStatus["UNSTABLE"] = "UNSTABLE";
-})(MergeStateStatus = exports.MergeStateStatus || (exports.MergeStateStatus = {}));
-var MergeableState;
-(function (MergeableState) {
-    MergeableState["CONFLICTING"] = "CONFLICTING";
-    MergeableState["MERGEABLE"] = "MERGEABLE";
-    MergeableState["UNKNOWN"] = "UNKNOWN";
-})(MergeableState = exports.MergeableState || (exports.MergeableState = {}));
-var StatusState;
-(function (StatusState) {
-    StatusState["ERROR"] = "ERROR";
-    StatusState["EXPECTED"] = "EXPECTED";
-    StatusState["FAILURE"] = "FAILURE";
-    StatusState["PENDING"] = "PENDING";
-    StatusState["SUCCESS"] = "SUCCESS";
-})(StatusState = exports.StatusState || (exports.StatusState = {}));
-var CheckConclusionState;
-(function (CheckConclusionState) {
-    CheckConclusionState["ACTION_REQUIRED"] = "ACTION_REQUIRED";
-    CheckConclusionState["CANCELLED"] = "CANCELLED";
-    CheckConclusionState["FAILURE"] = "FAILURE";
-    CheckConclusionState["NEUTRAL"] = "NEUTRAL";
-    CheckConclusionState["SKIPPED"] = "SKIPPED";
-    CheckConclusionState["STALE"] = "STALE";
-    CheckConclusionState["STARTUP_FAILURE"] = "STARTUP_FAILURE";
-    CheckConclusionState["SUCCESS"] = "SUCCESS";
-    CheckConclusionState["TIMED_OUT"] = "TIMED_OUT";
-})(CheckConclusionState = exports.CheckConclusionState || (exports.CheckConclusionState = {}));
-
-
-/***/ }),
-
-/***/ 918:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.stringify = exports.isStatusCheckPassAndBehindPr = exports.isPendingMergePr = void 0;
-const type_1 = __nccwpck_require__(134);
 function isPendingMergePr(pr, condition) {
     return (isApprovedPr(pr, condition) &&
         !pr.merged &&
-        pr.mergeable === type_1.MergeableState.MERGEABLE &&
-        pr.commits.nodes[0].commit.statusCheckRollup.state === type_1.StatusState.PENDING);
+        pr.mergeable === 'MERGEABLE' &&
+        pr.commits.nodes[0].commit.statusCheckRollup.state === 'PENDING');
 }
 exports.isPendingMergePr = isPendingMergePr;
 function isStatusCheckPassAndBehindPr(pr, condition) {
     return (isApprovedPr(pr, condition) &&
         !pr.merged &&
-        pr.mergeable === type_1.MergeableState.MERGEABLE &&
-        pr.mergeStateStatus === type_1.MergeStateStatus.BEHIND &&
+        pr.mergeable === 'MERGEABLE' &&
+        pr.mergeStateStatus === 'BEHIND' &&
         isStatusCheckSuccess(pr, condition));
 }
 exports.isStatusCheckPassAndBehindPr = isStatusCheckPassAndBehindPr;
@@ -436,10 +391,10 @@ function isStatusCheckSuccess(pr, condition) {
     const check = pr.commits.nodes[0].commit.statusCheckRollup;
     if (condition.statusChecks.length) {
         const conclusions = new Map(check.contexts.nodes.map(i => [i.name, i.conclusion]));
-        return condition.statusChecks.every(name => conclusions.get(name) === type_1.CheckConclusionState.SUCCESS);
+        return condition.statusChecks.every(name => conclusions.get(name) === 'SUCCESS');
     }
     else {
-        return check.state === type_1.StatusState.SUCCESS;
+        return check.state === 'SUCCESS';
     }
 }
 
@@ -451,14 +406,27 @@ function isStatusCheckSuccess(pr, condition) {
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.issue = exports.issueCommand = void 0;
 const os = __importStar(__nccwpck_require__(2087));
 const utils_1 = __nccwpck_require__(5278);
 /**
@@ -537,6 +505,25 @@ function escapeProperty(s) {
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -546,14 +533,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.getState = exports.saveState = exports.group = exports.endGroup = exports.startGroup = exports.info = exports.notice = exports.warning = exports.error = exports.debug = exports.isDebug = exports.setFailed = exports.setCommandEcho = exports.setOutput = exports.getBooleanInput = exports.getMultilineInput = exports.getInput = exports.addPath = exports.setSecret = exports.exportVariable = exports.ExitCode = void 0;
 const command_1 = __nccwpck_require__(7351);
 const file_command_1 = __nccwpck_require__(717);
 const utils_1 = __nccwpck_require__(5278);
@@ -620,7 +601,9 @@ function addPath(inputPath) {
 }
 exports.addPath = addPath;
 /**
- * Gets the value of an input.  The value is also trimmed.
+ * Gets the value of an input.
+ * Unless trimWhitespace is set to false in InputOptions, the value is also trimmed.
+ * Returns an empty string if the value is not defined.
  *
  * @param     name     name of the input to get
  * @param     options  optional. See InputOptions.
@@ -631,9 +614,49 @@ function getInput(name, options) {
     if (options && options.required && !val) {
         throw new Error(`Input required and not supplied: ${name}`);
     }
+    if (options && options.trimWhitespace === false) {
+        return val;
+    }
     return val.trim();
 }
 exports.getInput = getInput;
+/**
+ * Gets the values of an multiline input.  Each value is also trimmed.
+ *
+ * @param     name     name of the input to get
+ * @param     options  optional. See InputOptions.
+ * @returns   string[]
+ *
+ */
+function getMultilineInput(name, options) {
+    const inputs = getInput(name, options)
+        .split('\n')
+        .filter(x => x !== '');
+    return inputs;
+}
+exports.getMultilineInput = getMultilineInput;
+/**
+ * Gets the input value of the boolean type in the YAML 1.2 "core schema" specification.
+ * Support boolean input list: `true | True | TRUE | false | False | FALSE` .
+ * The return value is also in boolean type.
+ * ref: https://yaml.org/spec/1.2/spec.html#id2804923
+ *
+ * @param     name     name of the input to get
+ * @param     options  optional. See InputOptions.
+ * @returns   boolean
+ */
+function getBooleanInput(name, options) {
+    const trueValue = ['true', 'True', 'TRUE'];
+    const falseValue = ['false', 'False', 'FALSE'];
+    const val = getInput(name, options);
+    if (trueValue.includes(val))
+        return true;
+    if (falseValue.includes(val))
+        return false;
+    throw new TypeError(`Input does not meet YAML 1.2 "Core Schema" specification: ${name}\n` +
+        `Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
+}
+exports.getBooleanInput = getBooleanInput;
 /**
  * Sets the value of an output.
  *
@@ -642,6 +665,7 @@ exports.getInput = getInput;
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function setOutput(name, value) {
+    process.stdout.write(os.EOL);
     command_1.issueCommand('set-output', { name }, value);
 }
 exports.setOutput = setOutput;
@@ -688,19 +712,30 @@ exports.debug = debug;
 /**
  * Adds an error issue
  * @param message error issue message. Errors will be converted to string via toString()
+ * @param properties optional properties to add to the annotation.
  */
-function error(message) {
-    command_1.issue('error', message instanceof Error ? message.toString() : message);
+function error(message, properties = {}) {
+    command_1.issueCommand('error', utils_1.toCommandProperties(properties), message instanceof Error ? message.toString() : message);
 }
 exports.error = error;
 /**
- * Adds an warning issue
+ * Adds a warning issue
  * @param message warning issue message. Errors will be converted to string via toString()
+ * @param properties optional properties to add to the annotation.
  */
-function warning(message) {
-    command_1.issue('warning', message instanceof Error ? message.toString() : message);
+function warning(message, properties = {}) {
+    command_1.issueCommand('warning', utils_1.toCommandProperties(properties), message instanceof Error ? message.toString() : message);
 }
 exports.warning = warning;
+/**
+ * Adds a notice issue
+ * @param message notice issue message. Errors will be converted to string via toString()
+ * @param properties optional properties to add to the annotation.
+ */
+function notice(message, properties = {}) {
+    command_1.issueCommand('notice', utils_1.toCommandProperties(properties), message instanceof Error ? message.toString() : message);
+}
+exports.notice = notice;
 /**
  * Writes info to log with console.log.
  * @param message info message
@@ -783,14 +818,27 @@ exports.getState = getState;
 "use strict";
 
 // For internal use, subject to change.
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.issueCommand = void 0;
 // We use any as a valid input type
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const fs = __importStar(__nccwpck_require__(5747));
@@ -821,6 +869,7 @@ exports.issueCommand = issueCommand;
 // We use any as a valid input type
 /* eslint-disable @typescript-eslint/no-explicit-any */
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.toCommandProperties = exports.toCommandValue = void 0;
 /**
  * Sanitizes an input into a string so it can be passed into issueCommand safely
  * @param input input to sanitize into a string
@@ -835,6 +884,25 @@ function toCommandValue(input) {
     return JSON.stringify(input);
 }
 exports.toCommandValue = toCommandValue;
+/**
+ *
+ * @param annotationProperties
+ * @returns The command properties to send with the actual annotation command
+ * See IssueCommandProperties: https://github.com/actions/runner/blob/main/src/Runner.Worker/ActionCommandManager.cs#L646
+ */
+function toCommandProperties(annotationProperties) {
+    if (!Object.keys(annotationProperties).length) {
+        return {};
+    }
+    return {
+        title: annotationProperties.title,
+        line: annotationProperties.startLine,
+        endLine: annotationProperties.endLine,
+        col: annotationProperties.startColumn,
+        endColumn: annotationProperties.endColumn
+    };
+}
+exports.toCommandProperties = toCommandProperties;
 //# sourceMappingURL=utils.js.map
 
 /***/ }),
@@ -2349,21 +2417,25 @@ exports.isPlainObject = isPlainObject;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 
-var request = __nccwpck_require__(6234);
+var request = __nccwpck_require__(3758);
 var universalUserAgent = __nccwpck_require__(5030);
 
-const VERSION = "4.6.1";
+const VERSION = "4.8.0";
 
-class GraphqlError extends Error {
-  constructor(request, response) {
-    const message = response.data.errors[0].message;
-    super(message);
-    Object.assign(this, response.data);
-    Object.assign(this, {
-      headers: response.headers
-    });
-    this.name = "GraphqlError";
-    this.request = request; // Maintains proper stack trace (only available on V8)
+function _buildMessageForResponseErrors(data) {
+  return `Request failed due to following response errors:\n` + data.errors.map(e => ` - ${e.message}`).join("\n");
+}
+
+class GraphqlResponseError extends Error {
+  constructor(request, headers, response) {
+    super(_buildMessageForResponseErrors(response));
+    this.request = request;
+    this.headers = headers;
+    this.response = response;
+    this.name = "GraphqlResponseError"; // Expose the errors and response data in their shorthand properties.
+
+    this.errors = response.errors;
+    this.data = response.data; // Maintains proper stack trace (only available on V8)
 
     /* istanbul ignore next */
 
@@ -2421,10 +2493,7 @@ function graphql(request, query, options) {
         headers[key] = response.headers[key];
       }
 
-      throw new GraphqlError(requestOptions, {
-        headers,
-        data: response.data
-      });
+      throw new GraphqlResponseError(requestOptions, headers, response.data);
     }
 
     return response.data.data;
@@ -2458,9 +2527,323 @@ function withCustomRequest(customRequest) {
   });
 }
 
+exports.GraphqlResponseError = GraphqlResponseError;
 exports.graphql = graphql$1;
 exports.withCustomRequest = withCustomRequest;
 //# sourceMappingURL=index.js.map
+
+
+/***/ }),
+
+/***/ 8238:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+
+function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
+
+var deprecation = __nccwpck_require__(8932);
+var once = _interopDefault(__nccwpck_require__(1223));
+
+const logOnceCode = once(deprecation => console.warn(deprecation));
+const logOnceHeaders = once(deprecation => console.warn(deprecation));
+/**
+ * Error with extra properties to help with debugging
+ */
+
+class RequestError extends Error {
+  constructor(message, statusCode, options) {
+    super(message); // Maintains proper stack trace (only available on V8)
+
+    /* istanbul ignore next */
+
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor);
+    }
+
+    this.name = "HttpError";
+    this.status = statusCode;
+    let headers;
+
+    if ("headers" in options && typeof options.headers !== "undefined") {
+      headers = options.headers;
+    }
+
+    if ("response" in options) {
+      this.response = options.response;
+      headers = options.response.headers;
+    } // redact request credentials without mutating original request options
+
+
+    const requestCopy = Object.assign({}, options.request);
+
+    if (options.request.headers.authorization) {
+      requestCopy.headers = Object.assign({}, options.request.headers, {
+        authorization: options.request.headers.authorization.replace(/ .*$/, " [REDACTED]")
+      });
+    }
+
+    requestCopy.url = requestCopy.url // client_id & client_secret can be passed as URL query parameters to increase rate limit
+    // see https://developer.github.com/v3/#increasing-the-unauthenticated-rate-limit-for-oauth-applications
+    .replace(/\bclient_secret=\w+/g, "client_secret=[REDACTED]") // OAuth tokens can be passed as URL query parameters, although it is not recommended
+    // see https://developer.github.com/v3/#oauth2-token-sent-in-a-header
+    .replace(/\baccess_token=\w+/g, "access_token=[REDACTED]");
+    this.request = requestCopy; // deprecations
+
+    Object.defineProperty(this, "code", {
+      get() {
+        logOnceCode(new deprecation.Deprecation("[@octokit/request-error] `error.code` is deprecated, use `error.status`."));
+        return statusCode;
+      }
+
+    });
+    Object.defineProperty(this, "headers", {
+      get() {
+        logOnceHeaders(new deprecation.Deprecation("[@octokit/request-error] `error.headers` is deprecated, use `error.response.headers`."));
+        return headers || {};
+      }
+
+    });
+  }
+
+}
+
+exports.RequestError = RequestError;
+//# sourceMappingURL=index.js.map
+
+
+/***/ }),
+
+/***/ 3758:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+
+function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
+
+var endpoint = __nccwpck_require__(9440);
+var universalUserAgent = __nccwpck_require__(5030);
+var isPlainObject = __nccwpck_require__(3103);
+var nodeFetch = _interopDefault(__nccwpck_require__(467));
+var requestError = __nccwpck_require__(8238);
+
+const VERSION = "5.6.1";
+
+function getBufferResponse(response) {
+  return response.arrayBuffer();
+}
+
+function fetchWrapper(requestOptions) {
+  const log = requestOptions.request && requestOptions.request.log ? requestOptions.request.log : console;
+
+  if (isPlainObject.isPlainObject(requestOptions.body) || Array.isArray(requestOptions.body)) {
+    requestOptions.body = JSON.stringify(requestOptions.body);
+  }
+
+  let headers = {};
+  let status;
+  let url;
+  const fetch = requestOptions.request && requestOptions.request.fetch || nodeFetch;
+  return fetch(requestOptions.url, Object.assign({
+    method: requestOptions.method,
+    body: requestOptions.body,
+    headers: requestOptions.headers,
+    redirect: requestOptions.redirect
+  }, // `requestOptions.request.agent` type is incompatible
+  // see https://github.com/octokit/types.ts/pull/264
+  requestOptions.request)).then(async response => {
+    url = response.url;
+    status = response.status;
+
+    for (const keyAndValue of response.headers) {
+      headers[keyAndValue[0]] = keyAndValue[1];
+    }
+
+    if ("deprecation" in headers) {
+      const matches = headers.link && headers.link.match(/<([^>]+)>; rel="deprecation"/);
+      const deprecationLink = matches && matches.pop();
+      log.warn(`[@octokit/request] "${requestOptions.method} ${requestOptions.url}" is deprecated. It is scheduled to be removed on ${headers.sunset}${deprecationLink ? `. See ${deprecationLink}` : ""}`);
+    }
+
+    if (status === 204 || status === 205) {
+      return;
+    } // GitHub API returns 200 for HEAD requests
+
+
+    if (requestOptions.method === "HEAD") {
+      if (status < 400) {
+        return;
+      }
+
+      throw new requestError.RequestError(response.statusText, status, {
+        response: {
+          url,
+          status,
+          headers,
+          data: undefined
+        },
+        request: requestOptions
+      });
+    }
+
+    if (status === 304) {
+      throw new requestError.RequestError("Not modified", status, {
+        response: {
+          url,
+          status,
+          headers,
+          data: await getResponseData(response)
+        },
+        request: requestOptions
+      });
+    }
+
+    if (status >= 400) {
+      const data = await getResponseData(response);
+      const error = new requestError.RequestError(toErrorMessage(data), status, {
+        response: {
+          url,
+          status,
+          headers,
+          data
+        },
+        request: requestOptions
+      });
+      throw error;
+    }
+
+    return getResponseData(response);
+  }).then(data => {
+    return {
+      status,
+      url,
+      headers,
+      data
+    };
+  }).catch(error => {
+    if (error instanceof requestError.RequestError) throw error;
+    throw new requestError.RequestError(error.message, 500, {
+      request: requestOptions
+    });
+  });
+}
+
+async function getResponseData(response) {
+  const contentType = response.headers.get("content-type");
+
+  if (/application\/json/.test(contentType)) {
+    return response.json();
+  }
+
+  if (!contentType || /^text\/|charset=utf-8$/.test(contentType)) {
+    return response.text();
+  }
+
+  return getBufferResponse(response);
+}
+
+function toErrorMessage(data) {
+  if (typeof data === "string") return data; // istanbul ignore else - just in case
+
+  if ("message" in data) {
+    if (Array.isArray(data.errors)) {
+      return `${data.message}: ${data.errors.map(JSON.stringify).join(", ")}`;
+    }
+
+    return data.message;
+  } // istanbul ignore next - just in case
+
+
+  return `Unknown error: ${JSON.stringify(data)}`;
+}
+
+function withDefaults(oldEndpoint, newDefaults) {
+  const endpoint = oldEndpoint.defaults(newDefaults);
+
+  const newApi = function (route, parameters) {
+    const endpointOptions = endpoint.merge(route, parameters);
+
+    if (!endpointOptions.request || !endpointOptions.request.hook) {
+      return fetchWrapper(endpoint.parse(endpointOptions));
+    }
+
+    const request = (route, parameters) => {
+      return fetchWrapper(endpoint.parse(endpoint.merge(route, parameters)));
+    };
+
+    Object.assign(request, {
+      endpoint,
+      defaults: withDefaults.bind(null, endpoint)
+    });
+    return endpointOptions.request.hook(request, endpointOptions);
+  };
+
+  return Object.assign(newApi, {
+    endpoint,
+    defaults: withDefaults.bind(null, endpoint)
+  });
+}
+
+const request = withDefaults(endpoint.endpoint, {
+  headers: {
+    "user-agent": `octokit-request.js/${VERSION} ${universalUserAgent.getUserAgent()}`
+  }
+});
+
+exports.request = request;
+//# sourceMappingURL=index.js.map
+
+
+/***/ }),
+
+/***/ 3103:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+
+/*!
+ * is-plain-object <https://github.com/jonschlinkert/is-plain-object>
+ *
+ * Copyright (c) 2014-2017, Jon Schlinkert.
+ * Released under the MIT License.
+ */
+
+function isObject(o) {
+  return Object.prototype.toString.call(o) === '[object Object]';
+}
+
+function isPlainObject(o) {
+  var ctor,prot;
+
+  if (isObject(o) === false) return false;
+
+  // If has modified constructor
+  ctor = o.constructor;
+  if (ctor === undefined) return true;
+
+  // If has modified prototype
+  prot = ctor.prototype;
+  if (isObject(prot) === false) return false;
+
+  // If constructor does not have an Object-specific method
+  if (prot.hasOwnProperty('isPrototypeOf') === false) {
+    return false;
+  }
+
+  // Most likely a plain Object
+  return true;
+}
+
+exports.isPlainObject = isPlainObject;
 
 
 /***/ }),
@@ -4024,13 +4407,14 @@ var retrier = __nccwpck_require__(4347);
 function retry(fn, opts) {
   function run(resolve, reject) {
     var options = opts || {};
+    var op;
 
     // Default `randomize` to true
     if (!('randomize' in options)) {
       options.randomize = true;
     }
 
-    var op = retrier.operation(options);
+    op = retrier.operation(options);
 
     // We allow the user to abort retrying
     // this makes sense in the cases where
@@ -6008,7 +6392,7 @@ var RetryOperation = __nccwpck_require__(5369);
 exports.operation = function(options) {
   var timeouts = exports.timeouts(options);
   return new RetryOperation(timeouts, {
-      forever: options && options.forever,
+      forever: options && (options.forever || options.retries === Infinity),
       unref: options && options.unref,
       maxRetryTime: options && options.maxRetryTime
   });
@@ -6056,7 +6440,7 @@ exports.createTimeout = function(attempt, opts) {
     ? (Math.random() + 1)
     : 1;
 
-  var timeout = Math.round(random * opts.minTimeout * Math.pow(opts.factor, attempt));
+  var timeout = Math.round(random * Math.max(opts.minTimeout, 1) * Math.pow(opts.factor, attempt));
   timeout = Math.min(timeout, opts.maxTimeout);
 
   return timeout;
@@ -6127,6 +6511,7 @@ function RetryOperation(timeouts, options) {
   this._operationTimeoutCb = null;
   this._timeout = null;
   this._operationStart = null;
+  this._timer = null;
 
   if (this._options.forever) {
     this._cachedTimeouts = this._timeouts.slice(0);
@@ -6136,12 +6521,15 @@ module.exports = RetryOperation;
 
 RetryOperation.prototype.reset = function() {
   this._attempts = 1;
-  this._timeouts = this._originalTimeouts;
+  this._timeouts = this._originalTimeouts.slice(0);
 }
 
 RetryOperation.prototype.stop = function() {
   if (this._timeout) {
     clearTimeout(this._timeout);
+  }
+  if (this._timer) {
+    clearTimeout(this._timer);
   }
 
   this._timeouts       = [];
@@ -6158,6 +6546,7 @@ RetryOperation.prototype.retry = function(err) {
   }
   var currentTime = new Date().getTime();
   if (err && currentTime - this._operationStart >= this._maxRetryTime) {
+    this._errors.push(err);
     this._errors.unshift(new Error('RetryOperation timeout occurred'));
     return false;
   }
@@ -6168,16 +6557,15 @@ RetryOperation.prototype.retry = function(err) {
   if (timeout === undefined) {
     if (this._cachedTimeouts) {
       // retry forever, only keep last error
-      this._errors.splice(this._errors.length - 1, this._errors.length);
-      this._timeouts = this._cachedTimeouts.slice(0);
-      timeout = this._timeouts.shift();
+      this._errors.splice(0, this._errors.length - 1);
+      timeout = this._cachedTimeouts.slice(-1);
     } else {
       return false;
     }
   }
 
   var self = this;
-  var timer = setTimeout(function() {
+  this._timer = setTimeout(function() {
     self._attempts++;
 
     if (self._operationTimeoutCb) {
@@ -6194,7 +6582,7 @@ RetryOperation.prototype.retry = function(err) {
   }, timeout);
 
   if (this._options.unref) {
-      timer.unref();
+      this._timer.unref();
   }
 
   return true;

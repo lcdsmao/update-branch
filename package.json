@@ -2,7 +2,7 @@
   "name": "update-branch",
   "version": "1.0.0",
   "private": true,
-  "description": "Merge your pull request in the right order.",
+  "description": "Merge your pull request in order.",
   "main": "lib/main.js",
   "scripts": {
     "build": "tsc",

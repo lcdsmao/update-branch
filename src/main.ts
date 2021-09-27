@@ -2,21 +2,15 @@ import * as core from '@actions/core'
 import * as github from '@actions/github'
 import {getIssue, updateIssue} from './issue'
 import {
+  enablePullRequestAutoMerge,
   getPullRequest,
   listAvailablePullRequests,
-  updateBranch,
-  enablePullRequestAutoMerge
+  updateBranch
 } from './pullRequest'
+import {Condition, GhContext, IssueInfo, RecordBody} from './type'
 import {
-  Condition,
-  GhContext,
-  IssueInfo,
-  MergeStateStatus,
-  RecordBody
-} from './type'
-import {
-  isStatusCheckPassAndBehindPr,
   isPendingMergePr,
+  isStatusCheckPassAndBehindPr,
   stringify
 } from './utils'
 
