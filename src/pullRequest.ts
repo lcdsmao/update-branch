@@ -79,11 +79,14 @@ export async function listAvailablePullRequests(
 }
 
 export async function updateBranch(ctx: GhContext, num: number): Promise<void> {
-  await ctx.octokit.pulls.updateBranch({
-    owner: ctx.owner,
-    repo: ctx.repo,
-    pull_number: num
-  })
+  await ctx.octokit.request(
+    'PUT /repos/{owner}/{repo}/pulls/{pull_number}/update-branch',
+    {
+      owner: ctx.owner,
+      repo: ctx.repo,
+      pull_number: num
+    }
+  )
 }
 
 export async function enablePullRequestAutoMerge(
