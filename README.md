@@ -4,6 +4,8 @@ Merge your pull request in order when enabled the `Require branches to be up to 
 
 Inspired by [Merge Queue feature of Mergify](https://mergify.io/features/merge-queue).
 
+> Rather than overconsuming your CI time by trying to merge multiple pull requests, just run it once before the pull request gets merged.
+
 ## Quick Start
 
 1. Create an issue for this action to record the working status. Remember the issue number.
@@ -16,9 +18,10 @@ name: Update branch
 on:
   push:
     branches:
+      # Find any PR that can be merged after main updated
       - main
   schedule:
-    # Or other cron schedule
+    # Also find any PR that can be merged periodically
     - cron: "0 1-12 * * 1-5"
 
   # Allows you to run this workflow manually from the Actions tab
@@ -30,10 +33,10 @@ jobs:
     steps:
       - uses: lcdsmao/update-branch@v1
         with:
-          token: ${{ secrets.BOT_ACCESS_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           # Require at least 2 approves
           approvedCount: 2
-          # The number of the previously created issue
+          # The number of the issue that used to record status
           recordIssueNumber: 2568
           # Require this status checks success 
           statusChecks: |
