@@ -1,5 +1,7 @@
 name: 'update-branch'
 description: 'Merge your pull request in order when enabled the `Require branches to be up to date before merging`'
+icon: 'git-pull-request'
+color: 'orange'
 author: 'lcdsmao'
 inputs:
   token:
