@@ -12,7 +12,7 @@ const checksNum = 40
 
 export async function getPullRequest(
   ctx: GhContext,
-  num: number
+  num: number,
 ): Promise<PullRequestInfo> {
   const result: RepositoryPullRequestInfo = await ctx.octokit.graphql(
     `query ($owner: String!, $repo: String!, $num: Int!) {
@@ -89,7 +89,10 @@ export async function updateBranch(ctx: GhContext, num: number): Promise<void> {
   })
 }
 
-export async function enablePullRequestAutoMerge(ctx: GhContext, prId: String): Promise<void> {
+export async function enablePullRequestAutoMerge(
+  ctx: GhContext,
+  prId: String
+): Promise<void> {
   await ctx.octokit.graphql(
     `mutation ($id: ID!) {
       enablePullRequestAutoMerge(input: { pullRequestId: $id }) {
