@@ -12,7 +12,7 @@ const checksNum = 40
 
 export async function getPullRequest(
   ctx: GhContext,
-  num: number,
+  num: number
 ): Promise<PullRequestInfo> {
   const result: RepositoryPullRequestInfo = await ctx.octokit.graphql(
     `query ($owner: String!, $repo: String!, $num: Int!) {
@@ -68,9 +68,7 @@ export async function listAvailablePullRequests(
   return await retry(
     async () => {
       const pullRequests = await listPullRequests(ctx)
-      const isAvailable = pullRequests.every(
-        pr => pr.mergeable !== MergeableState.UNKNOWN
-      )
+      const isAvailable = pullRequests.every(pr => pr.mergeable !== 'UNKNOWN')
       if (!isAvailable) throw Error('Some PRs state are UNKNOWN.')
       return pullRequests
     },

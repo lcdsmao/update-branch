@@ -16,41 +16,34 @@ export interface RecordBody {
   pendingMergePullRequestNumber?: number
 }
 
-export enum MergeStateStatus {
-  BEHIND = 'BEHIND',
-  BLOCKED = 'BLOCKED',
-  CLEAN = 'CLEAN',
-  DIRTY = 'DIRTY',
-  HAS_HOOKS = 'HAS_HOOKS',
-  UNKNOWN = 'UNKNOWN',
-  UNSTABLE = 'UNSTABLE'
-}
+export type MergeStateStatus =
+  | 'BEHIND'
+  | 'BLOCKED'
+  | 'CLEAN'
+  | 'DIRTY'
+  | 'HAS_HOOKS'
+  | 'UNKNOWN'
+  | 'UNSTABLE'
 
-export enum MergeableState {
-  CONFLICTING = 'CONFLICTING',
-  MERGEABLE = 'MERGEABLE',
-  UNKNOWN = 'UNKNOWN'
-}
+export type MergeableState = 'CONFLICTING' | 'MERGEABLE' | 'UNKNOWN'
 
-export enum StatusState {
-  ERROR = 'ERROR',
-  EXPECTED = 'EXPECTED',
-  FAILURE = 'FAILURE',
-  PENDING = 'PENDING',
-  SUCCESS = 'SUCCESS'
-}
+export type StatusState =
+  | 'ERROR'
+  | 'EXPECTED'
+  | 'FAILURE'
+  | 'PENDING'
+  | 'SUCCESS'
 
-export enum CheckConclusionState {
-  ACTION_REQUIRED = 'ACTION_REQUIRED',
-  CANCELLED = 'CANCELLED',
-  FAILURE = 'FAILURE',
-  NEUTRAL = 'NEUTRAL',
-  SKIPPED = 'SKIPPED',
-  STALE = 'STALE',
-  STARTUP_FAILURE = 'STARTUP_FAILURE',
-  SUCCESS = 'SUCCESS',
-  TIMED_OUT = 'TIMED_OUT'
-}
+export type CheckConclusionState =
+  | 'ACTION_REQUIRED'
+  | 'CANCELLED'
+  | 'FAILURE'
+  | 'NEUTRAL'
+  | 'SKIPPED'
+  | 'STALE'
+  | 'STARTUP_FAILURE'
+  | 'SUCCESS'
+  | 'TIMED_OUT'
 
 export interface PullRequestInfo {
   id: string

@@ -83,10 +83,10 @@ async function findBehindPrAndUpdateBranch(
     const pendingMergePr = await getPullRequest(ctx, pendingMergePrNum)
     core.info(`Found pending merge PR ${stringify(pendingMergePr)}.`)
     if (isPendingMergePr(pendingMergePr, condition)) {
-      if (pendingMergePr.mergeStateStatus === MergeStateStatus.BLOCKED) {
+      if (pendingMergePr.mergeStateStatus === 'BLOCKED') {
         core.info(`Wait PR #${pendingMergePrNum} to be merged.`)
         return {...recordBody, editing: false}
-      } else if (pendingMergePr.mergeStateStatus === MergeStateStatus.BEHIND) {
+      } else if (pendingMergePr.mergeStateStatus === 'BEHIND') {
         updateBranch(ctx, pendingMergePrNum)
         enablePullRequestAutoMerge(ctx, pendingMergePr.id)
         core.info(

@@ -14,8 +14,8 @@ export function isPendingMergePr(
   return (
     isApprovedPr(pr, condition) &&
     !pr.merged &&
-    pr.mergeable === MergeableState.MERGEABLE &&
-    pr.commits.nodes[0].commit.statusCheckRollup.state === StatusState.PENDING
+    pr.mergeable === 'MERGEABLE' &&
+    pr.commits.nodes[0].commit.statusCheckRollup.state === 'PENDING'
   )
 }
 
@@ -26,8 +26,8 @@ export function isStatusCheckPassAndBehindPr(
   return (
     isApprovedPr(pr, condition) &&
     !pr.merged &&
-    pr.mergeable === MergeableState.MERGEABLE &&
-    pr.mergeStateStatus === MergeStateStatus.BEHIND &&
+    pr.mergeable === 'MERGEABLE' &&
+    pr.mergeStateStatus === 'BEHIND' &&
     isStatusCheckSuccess(pr, condition)
   )
 }
@@ -53,9 +53,9 @@ function isStatusCheckSuccess(
       check.contexts.nodes.map(i => [i.name, i.conclusion])
     )
     return condition.statusChecks.every(
-      name => conclusions.get(name) === CheckConclusionState.SUCCESS
+      name => conclusions.get(name) === 'SUCCESS'
     )
   } else {
-    return check.state === StatusState.SUCCESS
+    return check.state === 'SUCCESS'
   }
 }
