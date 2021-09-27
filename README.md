@@ -1,6 +1,6 @@
 # Update-branch
 
-Merge your pull request in the order when enabled the `Require branches to be up to date before merging`.
+Merge your pull request in order when enabled the `Require branches to be up to date before merging`.
 
 Inspired by [Merge Queue feature of Mergify](https://mergify.io/features/merge-queue).
 
