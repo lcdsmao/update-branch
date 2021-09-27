@@ -32,7 +32,7 @@ export function stringify<T>(obj: T): string {
 function isApprovedPr(pr: PullRequestInfo, condition: Condition): boolean {
   return (
     pr.reviews.totalCount >= condition.approvedCount &&
-    pr.reviews.totalCount >= pr.reviewRequests.totalCount
+    pr.reviewRequests.totalCount === 0
   )
 }
 
