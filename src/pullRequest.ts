@@ -98,13 +98,14 @@ export async function enablePullRequestAutoMerge(
   prId: String
 ): Promise<void> {
   await ctx.octokit.graphql(
-    `mutation ($id: ID!) {
-      enablePullRequestAutoMerge(input: { pullRequestId: $id }) {
+    `mutation ($id: ID!, $mergeMethod: PullRequestMergeMethod) {
+      enablePullRequestAutoMerge(input: { pullRequestId: $id, mergeMethod: $mergeMethod }) {
         clientMutationId
       }
     }`,
     {
-      id: prId
+      id: prId,
+      mergeMethod: ctx.autoMergeMethod
     }
   )
 }

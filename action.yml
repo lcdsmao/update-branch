@@ -11,6 +11,10 @@ inputs:
   recordIssueNumber:
     required: true
     description: 'Record working progress'
+  autoMergeMethod:
+    required: false
+    description: 'Method to use when enable pull request auto merge (default squash)'
+    default: 'SQUASH'
   approvedCount:
     required: true
     description: 'At least the approved count of the branch to update'

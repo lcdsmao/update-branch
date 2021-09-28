@@ -4,6 +4,7 @@ export interface GhContext {
   octokit: Octokit
   owner: string
   repo: string
+  autoMergeMethod: string
 }
 
 export interface Condition {
