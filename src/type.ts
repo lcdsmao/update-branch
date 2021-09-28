@@ -4,6 +4,7 @@ export interface GhContext {
   octokit: Octokit
   owner: string
   repo: string
+  autoMergeMethod: string
 }
 
 export interface Condition {
@@ -94,16 +95,16 @@ export interface RepositoryData<T> {
   repository: T
 }
 
-export type RepositoryPullRequestsInfo = RepositoryData<{
+export type RepositoryListPullRequest = RepositoryData<{
   pullRequests: {
     nodes: PullRequestInfo[]
   }
 }>
 
-export type RepositoryPullRequestInfo = RepositoryData<{
+export type RepositoryGetPullRequest = RepositoryData<{
   pullRequest: PullRequestInfo
 }>
 
-export type RepositoryIssueInfo = RepositoryData<{
+export type RepositoryGetIssue = RepositoryData<{
   issue: IssueInfo
 }>

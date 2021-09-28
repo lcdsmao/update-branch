@@ -23,6 +23,7 @@ async function run(): Promise<void> {
       .split('\n')
       .filter(s => s !== '')
     const token = core.getInput('token')
+    const autoMergeMethod = core.getInput('autoMergeMethod')
     const condition: Condition = {
       approvedCount,
       statusChecks
@@ -30,7 +31,7 @@ async function run(): Promise<void> {
 
     const octokit = github.getOctokit(token)
     const {owner, repo} = github.context.repo
-    const ctx: GhContext = {octokit, owner, repo}
+    const ctx: GhContext = {octokit, owner, repo, autoMergeMethod}
 
     const {recordIssue, recordBody} = await getRecordIssue(
       ctx,
@@ -80,8 +81,8 @@ async function findBehindPrAndUpdateBranch(
         core.info(`Wait PR #${pendingMergePrNum} to be merged.`)
         return {...recordBody, editing: false}
       } else if (pendingMergePr.mergeStateStatus === 'BEHIND') {
-        updateBranch(ctx, pendingMergePrNum)
-        enablePullRequestAutoMerge(ctx, pendingMergePr.id)
+        await enablePullRequestAutoMerge(ctx, pendingMergePr.id)
+        await updateBranch(ctx, pendingMergePrNum)
         core.info(
           `Update branch and wait PR #${pendingMergePrNum} to be merged.`
         )
