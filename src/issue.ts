@@ -1,10 +1,10 @@
-import {GhContext, IssueInfo, RepositoryIssueInfo} from './type'
+import {GhContext, IssueInfo, RepositoryGetIssue} from './type'
 
 export async function getIssue(
   ctx: GhContext,
   num: number
 ): Promise<IssueInfo> {
-  const data: RepositoryIssueInfo = await ctx.octokit.graphql(
+  const data: RepositoryGetIssue = await ctx.octokit.graphql(
     `query ($owner: String!, $repo: String!, $num: Int!) {
         repository(name: $repo, owner: $owner) {
           issue(number: $num) {

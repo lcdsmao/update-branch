@@ -2,8 +2,8 @@ import retry from 'async-retry'
 import {
   GhContext,
   PullRequestInfo,
-  RepositoryPullRequestInfo,
-  RepositoryPullRequestsInfo
+  RepositoryGetPullRequest,
+  RepositoryListPullRequest
 } from './type'
 
 const firstPrNum = 40
@@ -13,7 +13,7 @@ export async function getPullRequest(
   ctx: GhContext,
   num: number
 ): Promise<PullRequestInfo> {
-  const result: RepositoryPullRequestInfo = await ctx.octokit.graphql(
+  const result: RepositoryGetPullRequest = await ctx.octokit.graphql(
     `query ($owner: String!, $repo: String!, $num: Int!) {
         repository(name: $repo, owner: $owner) {
           pullRequest(number: $num) {
@@ -111,7 +111,7 @@ export async function enablePullRequestAutoMerge(
 }
 
 async function listPullRequests(ctx: GhContext): Promise<PullRequestInfo[]> {
-  const result: RepositoryPullRequestsInfo = await ctx.octokit.graphql(
+  const result: RepositoryListPullRequest = await ctx.octokit.graphql(
     `query ($owner: String!, $repo: String!) {
         repository(name: $repo, owner: $owner) {
           pullRequests(first: ${firstPrNum}, states: OPEN) {
