@@ -8,6 +8,8 @@ Inspired by [Merge Queue feature of Mergify](https://mergify.io/features/merge-q
 
 ## Quick Start
 
+0. Enable `Allow auto-merge` in `Settings`
+
 1. Create an issue for this action to record the working status. Remember the issue number.
 
 2. Create a workflow file (`.github/workflow/update-branch.yaml`):
@@ -36,9 +38,11 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           # Require at least 2 approves
           approvedCount: 2
+          # One of MERGE, SQUASH, REBASE
+          autoMergeMethod: MERGE
           # The number of the issue that used to record status
           recordIssueNumber: 2568
-          # Require this status checks success 
+          # Require this status checks success
           statusChecks: |
             build_pr
             WIP
