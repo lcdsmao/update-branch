@@ -8,7 +8,7 @@ Inspired by [Merge Queue feature of Mergify](https://mergify.io/features/merge-q
 
 ## Quick Start
 
-0. Enable `Allow auto-merge` in `Settings`
+0. Enable `Allow auto-merge` in `Settings`.
 
 1. Create an issue for this action to record the working status. Remember the issue number.
 
