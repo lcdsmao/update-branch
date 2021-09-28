@@ -101,13 +101,14 @@ function run() {
                 .split('\n')
                 .filter(s => s !== '');
             const token = core.getInput('token');
+            const autoMergeMethod = core.getInput('autoMergeMethod');
             const condition = {
                 approvedCount,
                 statusChecks
             };
             const octokit = github.getOctokit(token);
             const { owner, repo } = github.context.repo;
-            const ctx = { octokit, owner, repo };
+            const ctx = { octokit, owner, repo, autoMergeMethod };
             const { recordIssue, recordBody } = yield getRecordIssue(ctx, recordIssueNumber);
             if (recordBody.editing) {
                 core.info('Other actions are editing record. Exit.');
@@ -146,8 +147,8 @@ function findBehindPrAndUpdateBranch(ctx, recordBody, condition) {
                     return Object.assign(Object.assign({}, recordBody), { editing: false });
                 }
                 else if (pendingMergePr.mergeStateStatus === 'BEHIND') {
-                    (0, pullRequest_1.updateBranch)(ctx, pendingMergePrNum);
-                    (0, pullRequest_1.enablePullRequestAutoMerge)(ctx, pendingMergePr.id);
+                    yield (0, pullRequest_1.enablePullRequestAutoMerge)(ctx, pendingMergePr.id);
+                    yield (0, pullRequest_1.updateBranch)(ctx, pendingMergePrNum);
                     core.info(`Update branch and wait PR #${pendingMergePrNum} to be merged.`);
                     return Object.assign(Object.assign({}, recordBody), { editing: false });
                 }
@@ -296,12 +297,13 @@ function updateBranch(ctx, num) {
 exports.updateBranch = updateBranch;
 function enablePullRequestAutoMerge(ctx, prId) {
     return __awaiter(this, void 0, void 0, function* () {
-        yield ctx.octokit.graphql(`mutation ($id: ID!) {
-      enablePullRequestAutoMerge(input: { pullRequestId: $id }) {
+        yield ctx.octokit.graphql(`mutation ($id: ID!, $mergeMethod: PullRequestMergeMethod) {
+      enablePullRequestAutoMerge(input: { pullRequestId: $id, mergeMethod: $mergeMethod }) {
         clientMutationId
       }
     }`, {
-            id: prId
+            id: prId,
+            mergeMethod: ctx.autoMergeMethod
         });
     });
 }
