@@ -110,6 +110,23 @@ export async function enablePullRequestAutoMerge(
   )
 }
 
+export async function mergePullRequest(
+  ctx: GhContext,
+  prId: String
+): Promise<void> {
+  await ctx.octokit.graphql(
+    `mutation ($id: ID!, $mergeMethod: PullRequestMergeMethod) {
+      mergePullRequest(input: { pullRequestId: $id, mergeMethod: $mergeMethod }) {
+        clientMutationId
+      }
+    }`,
+    {
+      id: prId,
+      mergeMethod: ctx.autoMergeMethod
+    }
+  )
+}
+
 async function listPullRequests(ctx: GhContext): Promise<PullRequestInfo[]> {
   const result: RepositoryListPullRequest = await ctx.octokit.graphql(
     `query ($owner: String!, $repo: String!) {

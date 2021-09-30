@@ -5,14 +5,11 @@ import {
   enablePullRequestAutoMerge,
   getPullRequest,
   listAvailablePullRequests,
+  mergePullRequest,
   updateBranch
 } from './pullRequest'
 import {Condition, GhContext, IssueInfo, RecordBody} from './type'
-import {
-  isPendingMergePr,
-  isStatusCheckPassAndBehindPr,
-  stringify
-} from './utils'
+import {isPendingMergePr, isStatusCheckPassPr, stringify} from './utils'
 
 async function run(): Promise<void> {
   try {
@@ -94,24 +91,29 @@ async function findBehindPrAndUpdateBranch(
     )
   }
 
-  const behindPrs = availablePrs.filter(pr =>
-    isStatusCheckPassAndBehindPr(pr, condition)
-  )
-  const behindPr =
-    behindPrs.find(pr => pr.number === pendingMergePrNum) || behindPrs[0]
-  if (behindPr === undefined) {
-    core.info('Found no PR that needs update branch.')
+  const passPrs = availablePrs.filter(pr => isStatusCheckPassPr(pr, condition))
+  const cleanPr = passPrs.find(pr => pr.mergeStateStatus === 'CLEAN')
+  if (cleanPr) {
+    core.info(`Merge PR #${cleanPr.number}.`)
+    await mergePullRequest(ctx, cleanPr.id)
     return {editing: false}
   }
-  core.info(
-    `Found PR: ${behindPr.title}, #${behindPr.number} and try to update branch.`
-  )
-  updateBranch(ctx, behindPr.number)
-  enablePullRequestAutoMerge(ctx, behindPr.id)
-  return {
-    editing: false,
-    pendingMergePullRequestNumber: behindPr.number
+
+  const behindPr = passPrs.find(pr => pr.mergeStateStatus === 'BEHIND')
+  if (behindPr) {
+    core.info(
+      `Found PR #${behindPr.number} and try to update branch enable auto merge and.`
+    )
+    await updateBranch(ctx, behindPr.number)
+    await enablePullRequestAutoMerge(ctx, behindPr.id)
+    return {
+      editing: false,
+      pendingMergePullRequestNumber: behindPr.number
+    }
   }
+
+  core.info('Found no PR that needs update branch.')
+  return {editing: false}
 }
 
 async function updateRecordIssueBody(

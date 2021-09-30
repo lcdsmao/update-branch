@@ -12,7 +12,7 @@ export function isPendingMergePr(
   )
 }
 
-export function isStatusCheckPassAndBehindPr(
+export function isStatusCheckPassPr(
   pr: PullRequestInfo,
   condition: Condition
 ): boolean {
@@ -20,7 +20,6 @@ export function isStatusCheckPassAndBehindPr(
     isApprovedPr(pr, condition) &&
     !pr.merged &&
     pr.mergeable === 'MERGEABLE' &&
-    pr.mergeStateStatus === 'BEHIND' &&
     isStatusCheckSuccess(pr, condition)
   )
 }
