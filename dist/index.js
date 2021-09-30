@@ -155,19 +155,25 @@ function findBehindPrAndUpdateBranch(ctx, recordBody, condition) {
             }
             core.info(`Pending merge PR #${pendingMergePrNum} can not be merged. Try to find other PR that needs update branch.`);
         }
-        const behindPrs = availablePrs.filter(pr => (0, utils_1.isStatusCheckPassAndBehindPr)(pr, condition));
-        const behindPr = behindPrs.find(pr => pr.number === pendingMergePrNum) || behindPrs[0];
-        if (behindPr === undefined) {
-            core.info('Found no PR that needs update branch.');
+        const passPrs = availablePrs.filter(pr => (0, utils_1.isStatusCheckPassPr)(pr, condition));
+        const cleanPr = passPrs.find(pr => pr.mergeStateStatus === 'CLEAN');
+        if (cleanPr) {
+            core.info(`Merge PR #${cleanPr.number}.`);
+            yield (0, pullRequest_1.mergePullRequest)(ctx, cleanPr.id);
             return { editing: false };
         }
-        core.info(`Found PR: ${behindPr.title}, #${behindPr.number} and try to update branch.`);
-        (0, pullRequest_1.updateBranch)(ctx, behindPr.number);
-        (0, pullRequest_1.enablePullRequestAutoMerge)(ctx, behindPr.id);
-        return {
-            editing: false,
-            pendingMergePullRequestNumber: behindPr.number
-        };
+        const behindPr = passPrs.find(pr => pr.mergeStateStatus === 'BEHIND');
+        if (behindPr) {
+            core.info(`Found PR #${behindPr.number} and try to update branch enable auto merge and.`);
+            yield (0, pullRequest_1.updateBranch)(ctx, behindPr.number);
+            yield (0, pullRequest_1.enablePullRequestAutoMerge)(ctx, behindPr.id);
+            return {
+                editing: false,
+                pendingMergePullRequestNumber: behindPr.number
+            };
+        }
+        core.info('Found no PR that needs update branch.');
+        return { editing: false };
     });
 }
 function updateRecordIssueBody(ctx, recordIssue, body) {
@@ -214,7 +220,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.enablePullRequestAutoMerge = exports.updateBranch = exports.listAvailablePullRequests = exports.getPullRequest = void 0;
+exports.mergePullRequest = exports.enablePullRequestAutoMerge = exports.updateBranch = exports.listAvailablePullRequests = exports.getPullRequest = void 0;
 const async_retry_1 = __importDefault(__nccwpck_require__(3415));
 const firstPrNum = 40;
 const checksNum = 40;
@@ -308,6 +314,19 @@ function enablePullRequestAutoMerge(ctx, prId) {
     });
 }
 exports.enablePullRequestAutoMerge = enablePullRequestAutoMerge;
+function mergePullRequest(ctx, prId) {
+    return __awaiter(this, void 0, void 0, function* () {
+        yield ctx.octokit.graphql(`mutation ($id: ID!, $mergeMethod: PullRequestMergeMethod) {
+      mergePullRequest(input: { pullRequestId: $id, mergeMethod: $mergeMethod }) {
+        clientMutationId
+      }
+    }`, {
+            id: prId,
+            mergeMethod: ctx.autoMergeMethod
+        });
+    });
+}
+exports.mergePullRequest = mergePullRequest;
 function listPullRequests(ctx) {
     return __awaiter(this, void 0, void 0, function* () {
         const result = yield ctx.octokit.graphql(`query ($owner: String!, $repo: String!) {
@@ -370,7 +389,7 @@ function listPullRequests(ctx) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.stringify = exports.isStatusCheckPassAndBehindPr = exports.isPendingMergePr = void 0;
+exports.stringify = exports.isStatusCheckPassPr = exports.isPendingMergePr = void 0;
 function isPendingMergePr(pr, condition) {
     return (isApprovedPr(pr, condition) &&
         !pr.merged &&
@@ -378,14 +397,13 @@ function isPendingMergePr(pr, condition) {
         pr.commits.nodes[0].commit.statusCheckRollup.state === 'PENDING');
 }
 exports.isPendingMergePr = isPendingMergePr;
-function isStatusCheckPassAndBehindPr(pr, condition) {
+function isStatusCheckPassPr(pr, condition) {
     return (isApprovedPr(pr, condition) &&
         !pr.merged &&
         pr.mergeable === 'MERGEABLE' &&
-        pr.mergeStateStatus === 'BEHIND' &&
         isStatusCheckSuccess(pr, condition));
 }
-exports.isStatusCheckPassAndBehindPr = isStatusCheckPassAndBehindPr;
+exports.isStatusCheckPassPr = isStatusCheckPassPr;
 function stringify(obj) {
     return JSON.stringify(obj);
 }
