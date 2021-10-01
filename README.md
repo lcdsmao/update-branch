@@ -20,11 +20,13 @@ name: Update branch
 on:
   push:
     branches:
-      # Find any PR that can be merged after main updated
       - main
-  schedule:
-    # Also find any PR that can be merged periodically
-    - cron: "0 1-12 * * 1-5"
+  pull_request:
+    types:
+      - labeled
+  check_suite:
+    types:
+      - completed
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -35,15 +37,18 @@ jobs:
     steps:
       - uses: lcdsmao/update-branch@v1
         with:
+          # Or use personal access token
           token: ${{ secrets.GITHUB_TOKEN }}
-          # Require at least 2 approves
-          approvedCount: 2
-          # One of MERGE, SQUASH, REBASE
-          autoMergeMethod: MERGE
           # The number of the issue that used to record status
           recordIssueNumber: 2568
-          # Require this status checks success
-          statusChecks: |
+          # One of MERGE, SQUASH, REBASE (default: MERGE)
+          autoMergeMethod: SQUASH
+          # Required at least 2 approves (default: 0)
+          requiredApprovals: 2
+          # Required pull request has labels (optional)
+          requiredLabels: auto-merge
+          # Required these status checks success
+          requiredStatusChecks: |
             build_pr
             WIP
 ```
