@@ -8,8 +8,9 @@ export interface GhContext {
 }
 
 export interface Condition {
-  approvedCount: number
-  statusChecks: string[]
+  requiredApprovals: number
+  requiredStatusChecks: string[]
+  requiredLabels: string[]
 }
 
 export interface RecordBody {
@@ -55,6 +56,9 @@ export interface PullRequestInfo {
   reviewRequests: {
     totalCount: number
   }
+  labels: {
+    nodes: LabelInfo[]
+  }
   number: number
   merged: boolean | undefined
   mergeable: MergeableState
@@ -73,6 +77,10 @@ export interface CommitInfo {
   commit: {
     statusCheckRollup: StatusCheckRollupInfo
   }
+}
+
+export interface LabelInfo {
+  name: string
 }
 
 export interface StatusCheckRollupInfo {

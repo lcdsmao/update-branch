@@ -13,17 +13,22 @@ import {isPendingMergePr, isStatusCheckPassPr, stringify} from './utils'
 
 async function run(): Promise<void> {
   try {
-    const recordIssueNumber = parseInt(core.getInput('recordIssueNumber'))
-    const approvedCount = parseInt(core.getInput('approvedCount'))
-    const statusChecks = core
-      .getInput('statusChecks')
-      .split('\n')
-      .filter(s => s !== '')
     const token = core.getInput('token')
     const autoMergeMethod = core.getInput('autoMergeMethod')
+    const recordIssueNumber = parseInt(core.getInput('recordIssueNumber'))
+    const requiredApprovals = parseInt(core.getInput('requiredApprovals'))
+    const requiredStatusChecks = core
+      .getInput('requiredStatusChecks')
+      .split('\n')
+      .filter(s => s !== '')
+    const requiredLabel = core
+      .getInput('requiredLabel')
+      .split('\n')
+      .filter(s => s !== '')
     const condition: Condition = {
-      approvedCount,
-      statusChecks
+      requiredApprovals,
+      requiredStatusChecks,
+      requiredLabels: requiredLabel
     }
 
     const octokit = github.getOctokit(token)
@@ -45,11 +50,7 @@ async function run(): Promise<void> {
 
     let newIssueBody: RecordBody = {editing: false}
     try {
-      newIssueBody = await findBehindPrAndUpdateBranch(
-        ctx,
-        recordBody,
-        condition
-      )
+      newIssueBody = await maybeUpdateBranchAndMerge(ctx, recordBody, condition)
     } finally {
       await updateRecordIssueBody(ctx, recordIssue, newIssueBody)
     }
@@ -62,7 +63,7 @@ async function run(): Promise<void> {
   }
 }
 
-async function findBehindPrAndUpdateBranch(
+async function maybeUpdateBranchAndMerge(
   ctx: GhContext,
   recordBody: RecordBody,
   condition: Condition
