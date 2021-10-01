@@ -34,11 +34,11 @@ function isSatisfyBasicConditionPr(
     pr.mergeable === 'MERGEABLE' &&
     pr.reviews.totalCount >= condition.requiredApprovals &&
     pr.reviewRequests.totalCount === 0 &&
-    isHasLabel(pr, condition)
+    hasLabels(pr, condition)
   )
 }
 
-function isHasLabel(pr: PullRequestInfo, condition: Condition): boolean {
+function hasLabels(pr: PullRequestInfo, condition: Condition): boolean {
   const labelNames = pr.labels.nodes.map(v => v.name)
   return condition.requiredLabels.every(v => labelNames.includes(v))
 }
