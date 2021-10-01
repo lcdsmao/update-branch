@@ -22,7 +22,7 @@ async function run(): Promise<void> {
       .split('\n')
       .filter(s => s !== '')
     const requiredLabels = core
-      .getInput('requiredLabel')
+      .getInput('requiredLabels')
       .split('\n')
       .filter(s => s !== '')
     const condition: Condition = {
