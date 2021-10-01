@@ -102,11 +102,14 @@ function run() {
                 .getInput('requiredStatusChecks')
                 .split('\n')
                 .filter(s => s !== '');
-            const requiredLabel = core.getInput('requiredLabel');
+            const requiredLabel = core
+                .getInput('requiredLabel')
+                .split('\n')
+                .filter(s => s !== '');
             const condition = {
                 requiredApprovals,
                 requiredStatusChecks,
-                requiredLabel
+                requiredLabels: requiredLabel
             };
             const octokit = github.getOctokit(token);
             const { owner, repo } = github.context.repo;
@@ -391,10 +394,8 @@ function isSatisfyBasicConditionPr(pr, condition) {
         isHasLabel(pr, condition));
 }
 function isHasLabel(pr, condition) {
-    if (!condition.requiredLabel) {
-        return true;
-    }
-    return pr.labels.nodes.some(e => e.name === condition.requiredLabel);
+    const labelNames = pr.labels.nodes.map(v => v.name);
+    return condition.requiredLabels.every(v => labelNames.includes(v));
 }
 function isStatusChecksSuccess(pr, condition) {
     const check = pr.commits.nodes[0].commit.statusCheckRollup;
