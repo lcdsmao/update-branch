@@ -102,15 +102,17 @@ function run() {
                 .getInput('requiredStatusChecks')
                 .split('\n')
                 .filter(s => s !== '');
-            const requiredLabel = core
+            const requiredLabels = core
                 .getInput('requiredLabel')
                 .split('\n')
                 .filter(s => s !== '');
             const condition = {
                 requiredApprovals,
                 requiredStatusChecks,
-                requiredLabels: requiredLabel
+                requiredLabels
             };
+            core.info('Condition:');
+            core.info((0, utils_1.stringify)(condition));
             const octokit = github.getOctokit(token);
             const { owner, repo } = github.context.repo;
             const ctx = { octokit, owner, repo, autoMergeMethod };
@@ -145,7 +147,6 @@ function maybeUpdateBranchAndMerge(ctx, recordBody, condition) {
         const pendingMergePrNum = recordBody.pendingMergePullRequestNumber;
         if (pendingMergePrNum !== undefined) {
             const pendingMergePr = yield (0, pullRequest_1.getPullRequest)(ctx, pendingMergePrNum);
-            core.info(`Found pending merge PR ${(0, utils_1.stringify)(pendingMergePr)}.`);
             if ((0, utils_1.isPendingMergePr)(pendingMergePr, condition)) {
                 if (pendingMergePr.mergeStateStatus === 'BLOCKED') {
                     core.info(`Wait PR #${pendingMergePrNum} to be merged.`);
@@ -382,7 +383,7 @@ function isStatusCheckPassPr(pr, condition) {
 }
 exports.isStatusCheckPassPr = isStatusCheckPassPr;
 function stringify(obj) {
-    return JSON.stringify(obj);
+    return JSON.stringify(obj, null, 2);
 }
 exports.stringify = stringify;
 // Except status check
@@ -391,9 +392,9 @@ function isSatisfyBasicConditionPr(pr, condition) {
         pr.mergeable === 'MERGEABLE' &&
         pr.reviews.totalCount >= condition.requiredApprovals &&
         pr.reviewRequests.totalCount === 0 &&
-        isHasLabel(pr, condition));
+        hasLabels(pr, condition));
 }
-function isHasLabel(pr, condition) {
+function hasLabels(pr, condition) {
     const labelNames = pr.labels.nodes.map(v => v.name);
     return condition.requiredLabels.every(v => labelNames.includes(v));
 }
