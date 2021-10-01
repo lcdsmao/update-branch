@@ -39,10 +39,8 @@ function isSatisfyBasicConditionPr(
 }
 
 function isHasLabel(pr: PullRequestInfo, condition: Condition): boolean {
-  if (!condition.requiredLabel) {
-    return true
-  }
-  return pr.labels.nodes.some(e => e.name === condition.requiredLabel)
+  const labelNames = pr.labels.nodes.map(v => v.name)
+  return condition.requiredLabels.every(v => labelNames.includes(v))
 }
 
 function isStatusChecksSuccess(

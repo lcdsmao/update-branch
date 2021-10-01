@@ -21,11 +21,14 @@ async function run(): Promise<void> {
       .getInput('requiredStatusChecks')
       .split('\n')
       .filter(s => s !== '')
-    const requiredLabel = core.getInput('requiredLabel')
+    const requiredLabel = core
+      .getInput('requiredLabel')
+      .split('\n')
+      .filter(s => s !== '')
     const condition: Condition = {
       requiredApprovals,
       requiredStatusChecks,
-      requiredLabel
+      requiredLabels: requiredLabel
     }
 
     const octokit = github.getOctokit(token)

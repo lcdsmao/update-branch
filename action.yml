@@ -19,9 +19,9 @@ inputs:
     required: false
     description: 'Count of required approval'
     default: '0'
-  requiredLabel:
+  requiredLabels:
     required: false
-    description: 'The label need to be present for a pull request'
+    description: 'Labels need to be present for a pull request'
   requiredStatusChecks:
     required: true
     description: 'Multiple status checks required to be success'

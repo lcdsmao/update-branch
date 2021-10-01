@@ -10,7 +10,7 @@ export interface GhContext {
 export interface Condition {
   requiredApprovals: number
   requiredStatusChecks: string[]
-  requiredLabel: string
+  requiredLabels: string[]
 }
 
 export interface RecordBody {
