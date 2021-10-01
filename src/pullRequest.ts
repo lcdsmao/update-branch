@@ -6,8 +6,9 @@ import {
   RepositoryListPullRequest
 } from './type'
 
-const firstPrNum = 40
-const checksNum = 40
+const firstPrNum = 50
+const checksNum = 50
+const labelNum = 10
 
 export async function getPullRequest(
   ctx: GhContext,
@@ -17,39 +18,7 @@ export async function getPullRequest(
     `query ($owner: String!, $repo: String!, $num: Int!) {
         repository(name: $repo, owner: $owner) {
           pullRequest(number: $num) {
-            id
-            title
-            number
-            merged
-            mergeable
-            mergeStateStatus
-            reviews(states: APPROVED) {
-              totalCount
-            }
-            reviewRequests {
-              totalCount
-            }
-            commits(last: 1) {
-              nodes {
-                commit {
-                  statusCheckRollup {
-                    contexts(first: ${checksNum}) {
-                      nodes {
-                        ... on CheckRun {
-                          name
-                          conclusion
-                        }
-                        ... on StatusContext {
-                          context
-                          state
-                        }
-                      }
-                    }
-                    state
-                  }
-                }
-              }
-            }
+            ${pullRequestFragment}
           }
         }
       }`,
@@ -133,39 +102,7 @@ async function listPullRequests(ctx: GhContext): Promise<PullRequestInfo[]> {
         repository(name: $repo, owner: $owner) {
           pullRequests(first: ${firstPrNum}, states: OPEN) {
             nodes {
-              id
-              title
-              number
-              merged
-              mergeable
-              mergeStateStatus
-              reviews(states: APPROVED) {
-                totalCount
-              }
-              reviewRequests {
-                totalCount
-              }
-              commits(last: 1) {
-                nodes {
-                  commit {
-                    statusCheckRollup {
-                      contexts(first: ${checksNum}) {
-                        nodes {
-                          ... on CheckRun {
-                            name
-                            conclusion
-                          }
-                          ... on StatusContext {
-                            context
-                            state
-                          }
-                        }
-                      }
-                      state
-                    }
-                  }
-                }
-              }
+              ${pullRequestFragment}
             }
           }
         }
@@ -180,3 +117,43 @@ async function listPullRequests(ctx: GhContext): Promise<PullRequestInfo[]> {
   )
   return result.repository.pullRequests.nodes
 }
+
+const pullRequestFragment = `
+  id
+  title
+  number
+  merged
+  mergeable
+  mergeStateStatus
+  reviews(states: APPROVED) {
+    totalCount
+  }
+  reviewRequests {
+    totalCount
+  }
+  labels(first: ${labelNum}) {
+    nodes {
+      name
+    }
+  }
+  commits(last: 1) {
+    nodes {
+      commit {
+        statusCheckRollup {
+          contexts(first: ${checksNum}) {
+            nodes {
+              ... on CheckRun {
+                name
+                conclusion
+              }
+              ... on StatusContext {
+                context
+                state
+              }
+            }
+          }
+          state
+        }
+      }
+    }
+  }`

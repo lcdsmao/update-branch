@@ -5,9 +5,7 @@ export function isPendingMergePr(
   condition: Condition
 ): boolean {
   return (
-    isApprovedPr(pr, condition) &&
-    !pr.merged &&
-    pr.mergeable === 'MERGEABLE' &&
+    isSatisfyBasicConditionPr(pr, condition) &&
     pr.commits.nodes[0].commit.statusCheckRollup.state === 'PENDING'
   )
 }
@@ -17,9 +15,7 @@ export function isStatusCheckPassPr(
   condition: Condition
 ): boolean {
   return (
-    isApprovedPr(pr, condition) &&
-    !pr.merged &&
-    pr.mergeable === 'MERGEABLE' &&
+    isSatisfyBasicConditionPr(pr, condition) &&
     isStatusChecksSuccess(pr, condition)
   )
 }
@@ -28,11 +24,25 @@ export function stringify<T>(obj: T): string {
   return JSON.stringify(obj)
 }
 
-function isApprovedPr(pr: PullRequestInfo, condition: Condition): boolean {
+// Except status check
+function isSatisfyBasicConditionPr(
+  pr: PullRequestInfo,
+  condition: Condition
+): boolean {
   return (
+    !pr.merged &&
+    pr.mergeable === 'MERGEABLE' &&
     pr.reviews.totalCount >= condition.requiredApprovals &&
-    pr.reviewRequests.totalCount === 0
+    pr.reviewRequests.totalCount === 0 &&
+    isHasLabel(pr, condition)
   )
+}
+
+function isHasLabel(pr: PullRequestInfo, condition: Condition): boolean {
+  if (!condition.requiredLabel) {
+    return true
+  }
+  return pr.labels.nodes.some(e => e.name === condition.requiredLabel)
 }
 
 function isStatusChecksSuccess(
