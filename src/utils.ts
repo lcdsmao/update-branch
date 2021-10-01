@@ -21,7 +21,7 @@ export function isStatusCheckPassPr(
 }
 
 export function stringify<T>(obj: T): string {
-  return JSON.stringify(obj)
+  return JSON.stringify(obj, null, 2)
 }
 
 // Except status check

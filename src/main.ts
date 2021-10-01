@@ -21,15 +21,18 @@ async function run(): Promise<void> {
       .getInput('requiredStatusChecks')
       .split('\n')
       .filter(s => s !== '')
-    const requiredLabel = core
+    const requiredLabels = core
       .getInput('requiredLabel')
       .split('\n')
       .filter(s => s !== '')
     const condition: Condition = {
       requiredApprovals,
       requiredStatusChecks,
-      requiredLabels: requiredLabel
+      requiredLabels
     }
+
+    core.info('Condition:')
+    core.info(stringify(condition))
 
     const octokit = github.getOctokit(token)
     const {owner, repo} = github.context.repo
@@ -73,7 +76,6 @@ async function maybeUpdateBranchAndMerge(
   const pendingMergePrNum = recordBody.pendingMergePullRequestNumber
   if (pendingMergePrNum !== undefined) {
     const pendingMergePr = await getPullRequest(ctx, pendingMergePrNum)
-    core.info(`Found pending merge PR ${stringify(pendingMergePr)}.`)
     if (isPendingMergePr(pendingMergePr, condition)) {
       if (pendingMergePr.mergeStateStatus === 'BLOCKED') {
         core.info(`Wait PR #${pendingMergePrNum} to be merged.`)
