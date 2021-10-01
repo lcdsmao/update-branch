@@ -94,17 +94,19 @@ const utils_1 = __nccwpck_require__(918);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const recordIssueNumber = parseInt(core.getInput('recordIssueNumber'));
-            const approvedCount = parseInt(core.getInput('approvedCount'));
-            const statusChecks = core
-                .getInput('statusChecks')
-                .split('\n')
-                .filter(s => s !== '');
             const token = core.getInput('token');
             const autoMergeMethod = core.getInput('autoMergeMethod');
+            const recordIssueNumber = parseInt(core.getInput('recordIssueNumber'));
+            const requiredApprovals = parseInt(core.getInput('requiredApprovals'));
+            const requiredStatusChecks = core
+                .getInput('requiredStatusChecks')
+                .split('\n')
+                .filter(s => s !== '');
+            const requiredLabel = core.getInput('requiredLabel');
             const condition = {
-                approvedCount,
-                statusChecks
+                requiredApprovals,
+                requiredStatusChecks,
+                requiredLabel
             };
             const octokit = github.getOctokit(token);
             const { owner, repo } = github.context.repo;
@@ -117,7 +119,7 @@ function run() {
             yield updateRecordIssueBody(ctx, recordIssue, Object.assign(Object.assign({}, recordBody), { editing: true }));
             let newIssueBody = { editing: false };
             try {
-                newIssueBody = yield findBehindPrAndUpdateBranch(ctx, recordBody, condition);
+                newIssueBody = yield maybeUpdateBranchAndMerge(ctx, recordBody, condition);
             }
             finally {
                 yield updateRecordIssueBody(ctx, recordIssue, newIssueBody);
@@ -133,7 +135,7 @@ function run() {
         }
     });
 }
-function findBehindPrAndUpdateBranch(ctx, recordBody, condition) {
+function maybeUpdateBranchAndMerge(ctx, recordBody, condition) {
     return __awaiter(this, void 0, void 0, function* () {
         const availablePrs = yield (0, pullRequest_1.listAvailablePullRequests)(ctx);
         // Get pending merge pr after all pr status become available
@@ -222,46 +224,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.mergePullRequest = exports.enablePullRequestAutoMerge = exports.updateBranch = exports.listAvailablePullRequests = exports.getPullRequest = void 0;
 const async_retry_1 = __importDefault(__nccwpck_require__(3415));
-const firstPrNum = 40;
-const checksNum = 40;
+const firstPrNum = 50;
+const checksNum = 50;
+const labelNum = 10;
 function getPullRequest(ctx, num) {
     return __awaiter(this, void 0, void 0, function* () {
         const result = yield ctx.octokit.graphql(`query ($owner: String!, $repo: String!, $num: Int!) {
         repository(name: $repo, owner: $owner) {
           pullRequest(number: $num) {
-            id
-            title
-            number
-            merged
-            mergeable
-            mergeStateStatus
-            reviews(states: APPROVED) {
-              totalCount
-            }
-            reviewRequests {
-              totalCount
-            }
-            commits(last: 1) {
-              nodes {
-                commit {
-                  statusCheckRollup {
-                    contexts(first: ${checksNum}) {
-                      nodes {
-                        ... on CheckRun {
-                          name
-                          conclusion
-                        }
-                        ... on StatusContext {
-                          context
-                          state
-                        }
-                      }
-                    }
-                    state
-                  }
-                }
-              }
-            }
+            ${pullRequestFragment}
           }
         }
       }`, {
@@ -333,39 +304,7 @@ function listPullRequests(ctx) {
         repository(name: $repo, owner: $owner) {
           pullRequests(first: ${firstPrNum}, states: OPEN) {
             nodes {
-              id
-              title
-              number
-              merged
-              mergeable
-              mergeStateStatus
-              reviews(states: APPROVED) {
-                totalCount
-              }
-              reviewRequests {
-                totalCount
-              }
-              commits(last: 1) {
-                nodes {
-                  commit {
-                    statusCheckRollup {
-                      contexts(first: ${checksNum}) {
-                        nodes {
-                          ... on CheckRun {
-                            name
-                            conclusion
-                          }
-                          ... on StatusContext {
-                            context
-                            state
-                          }
-                        }
-                      }
-                      state
-                    }
-                  }
-                }
-              }
+              ${pullRequestFragment}
             }
           }
         }
@@ -379,6 +318,45 @@ function listPullRequests(ctx) {
         return result.repository.pullRequests.nodes;
     });
 }
+const pullRequestFragment = `
+  id
+  title
+  number
+  merged
+  mergeable
+  mergeStateStatus
+  reviews(states: APPROVED) {
+    totalCount
+  }
+  reviewRequests {
+    totalCount
+  }
+  labels(first: ${labelNum}) {
+    nodes {
+      name
+    }
+  }
+  commits(last: 1) {
+    nodes {
+      commit {
+        statusCheckRollup {
+          contexts(first: ${checksNum}) {
+            nodes {
+              ... on CheckRun {
+                name
+                conclusion
+              }
+              ... on StatusContext {
+                context
+                state
+              }
+            }
+          }
+          state
+        }
+      }
+    }
+  }`;
 
 
 /***/ }),
@@ -391,32 +369,38 @@ function listPullRequests(ctx) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.stringify = exports.isStatusCheckPassPr = exports.isPendingMergePr = void 0;
 function isPendingMergePr(pr, condition) {
-    return (isApprovedPr(pr, condition) &&
-        !pr.merged &&
-        pr.mergeable === 'MERGEABLE' &&
+    return (isSatisfyBasicConditionPr(pr, condition) &&
         pr.commits.nodes[0].commit.statusCheckRollup.state === 'PENDING');
 }
 exports.isPendingMergePr = isPendingMergePr;
 function isStatusCheckPassPr(pr, condition) {
-    return (isApprovedPr(pr, condition) &&
-        !pr.merged &&
-        pr.mergeable === 'MERGEABLE' &&
-        isStatusCheckSuccess(pr, condition));
+    return (isSatisfyBasicConditionPr(pr, condition) &&
+        isStatusChecksSuccess(pr, condition));
 }
 exports.isStatusCheckPassPr = isStatusCheckPassPr;
 function stringify(obj) {
     return JSON.stringify(obj);
 }
 exports.stringify = stringify;
-function isApprovedPr(pr, condition) {
-    return (pr.reviews.totalCount >= condition.approvedCount &&
-        pr.reviewRequests.totalCount === 0);
+// Except status check
+function isSatisfyBasicConditionPr(pr, condition) {
+    return (!pr.merged &&
+        pr.mergeable === 'MERGEABLE' &&
+        pr.reviews.totalCount >= condition.requiredApprovals &&
+        pr.reviewRequests.totalCount === 0 &&
+        isHasLabel(pr, condition));
 }
-function isStatusCheckSuccess(pr, condition) {
+function isHasLabel(pr, condition) {
+    if (!condition.requiredLabel) {
+        return true;
+    }
+    return pr.labels.nodes.some(e => e.name === condition.requiredLabel);
+}
+function isStatusChecksSuccess(pr, condition) {
     const check = pr.commits.nodes[0].commit.statusCheckRollup;
-    if (condition.statusChecks.length) {
+    if (condition.requiredStatusChecks.length) {
         const nodeChecks = new Map(check.contexts.nodes.map(i => [i.name || i.context, i]));
-        return condition.statusChecks.every(name => {
+        return condition.requiredStatusChecks.every(name => {
             const check = nodeChecks.get(name);
             return (check === null || check === void 0 ? void 0 : check.conclusion) === 'SUCCESS' || (check === null || check === void 0 ? void 0 : check.state) === 'SUCCESS';
         });
