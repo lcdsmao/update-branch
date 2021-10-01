@@ -13,13 +13,16 @@ inputs:
     description: 'Record working progress'
   autoMergeMethod:
     required: false
-    description: 'Method to use when enable pull request auto merge (default squash)'
-    default: 'SQUASH'
-  approvedCount:
-    required: true
-    description: 'At least the approved count of the branch to update'
+    description: 'Method to use when enable pull request auto merge'
+    default: 'MERGE'
+  requiredApprovals:
+    required: false
+    description: 'Count of required approval'
     default: '0'
-  statusChecks:
+  requiredLabel:
+    required: false
+    description: 'The label need to be present for a pull request'
+  requiredStatusChecks:
     required: true
     description: 'Multiple status checks required to be success'
 runs:

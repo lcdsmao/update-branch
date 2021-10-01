@@ -8,8 +8,9 @@ export interface GhContext {
 }
 
 export interface Condition {
-  approvedCount: number
-  statusChecks: string[]
+  requiredApprovals: number
+  requiredStatusChecks: string[]
+  requiredLabel: string
 }
 
 export interface RecordBody {

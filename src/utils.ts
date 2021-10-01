@@ -20,7 +20,7 @@ export function isStatusCheckPassPr(
     isApprovedPr(pr, condition) &&
     !pr.merged &&
     pr.mergeable === 'MERGEABLE' &&
-    isStatusCheckSuccess(pr, condition)
+    isStatusChecksSuccess(pr, condition)
   )
 }
 
@@ -30,21 +30,21 @@ export function stringify<T>(obj: T): string {
 
 function isApprovedPr(pr: PullRequestInfo, condition: Condition): boolean {
   return (
-    pr.reviews.totalCount >= condition.approvedCount &&
+    pr.reviews.totalCount >= condition.requiredApprovals &&
     pr.reviewRequests.totalCount === 0
   )
 }
 
-function isStatusCheckSuccess(
+function isStatusChecksSuccess(
   pr: PullRequestInfo,
   condition: Condition
 ): boolean {
   const check = pr.commits.nodes[0].commit.statusCheckRollup
-  if (condition.statusChecks.length) {
+  if (condition.requiredStatusChecks.length) {
     const nodeChecks = new Map(
       check.contexts.nodes.map(i => [i.name || i.context, i])
     )
-    return condition.statusChecks.every(name => {
+    return condition.requiredStatusChecks.every(name => {
       const check = nodeChecks.get(name)
       return check?.conclusion === 'SUCCESS' || check?.state === 'SUCCESS'
     })
