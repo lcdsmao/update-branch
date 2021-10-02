@@ -60,7 +60,7 @@ export interface PullRequestInfo {
     nodes: LabelInfo[]
   }
   number: number
-  merged: boolean | undefined
+  merged: boolean
   mergeable: MergeableState
   mergeStateStatus: MergeStateStatus
   commits: {
@@ -92,11 +92,11 @@ export interface StatusCheckRollupInfo {
 
 export interface StatusCheckInfo {
   // on CheckRun
-  name: string | undefined
-  conclusion: CheckConclusionState | undefined
+  name?: string
+  conclusion?: CheckConclusionState
   // on StatusContext
-  context: string | undefined
-  state: StatusState | undefined
+  context?: string
+  state?: StatusState
 }
 
 export interface RepositoryData<T> {

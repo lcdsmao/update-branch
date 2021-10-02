@@ -35,7 +35,7 @@ jobs:
   update-branch:
     runs-on: ubuntu-latest
     steps:
-      - uses: lcdsmao/update-branch@v1
+      - uses: lcdsmao/update-branch@v2
         with:
           # Or use personal access token
           token: ${{ secrets.GITHUB_TOKEN }}

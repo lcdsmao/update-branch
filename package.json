@@ -26,7 +26,7 @@
   "author": "MAO YUFENG",
   "license": "MIT",
   "dependencies": {
-    "@actions/core": "^1.5.0",
+    "@actions/core": "^1.6.0",
     "@actions/github": "^5.0.0",
     "@octokit/graphql": "^4.8.0",
     "@types/async-retry": "^1.4.3",
