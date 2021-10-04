@@ -105,7 +105,7 @@ async function maybeUpdateBranchAndMerge(
   const behindPr = passPrs.find(pr => pr.mergeStateStatus === 'BEHIND')
   if (behindPr) {
     core.info(
-      `Found PR #${behindPr.number} and try to update branch enable auto merge and.`
+      `Found PR #${behindPr.number} can be merged. Try to update branch and enable auto merge.`
     )
     await updateBranch(ctx, behindPr.number)
     await enablePullRequestAutoMerge(ctx, behindPr.id)
