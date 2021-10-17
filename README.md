@@ -1,9 +1,15 @@
-# Update-branch
+# Update Branch
 
 Merge your pull request in order when enabled the `Require branches to be up to date before merging`.
 
 Inspired by [Merge Queue feature of Mergify](https://mergify.io/features/merge-queue).
 
+> Safety
+> 
+> Do not merge broken pull requests. By merging your pull requests serially using a queue, your code is safe. Each pull request is tested with the latest CI code.
+
+> Save CI time
+> 
 > Rather than overconsuming your CI time by trying to merge multiple pull requests, just run it once before the pull request gets merged.
 
 ## Quick Start
