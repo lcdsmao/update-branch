@@ -100,3 +100,4 @@ lib/**/*
 
 # Custom
 action/
+temp/
