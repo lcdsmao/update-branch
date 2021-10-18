@@ -77,7 +77,10 @@ async function maybeUpdateBranchAndMerge(
   if (pendingMergePrNum !== undefined) {
     const pendingMergePr = await getPullRequest(ctx, pendingMergePrNum)
     if (isPendingMergePr(pendingMergePr, condition)) {
-      if (pendingMergePr.mergeStateStatus === 'BLOCKED') {
+      if (
+        pendingMergePr.mergeStateStatus === 'BLOCKED' ||
+        pendingMergePr.mergeStateStatus === 'UNKNOWN'
+      ) {
         core.info(`Wait PR #${pendingMergePrNum} to be merged.`)
         return {...recordBody, editing: false}
       } else if (pendingMergePr.mergeStateStatus === 'BEHIND') {
