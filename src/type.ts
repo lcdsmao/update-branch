@@ -18,6 +18,7 @@ export interface RecordBody {
   pendingMergePullRequestNumber?: number
 }
 
+// https://docs.github.com/en/graphql/reference/enums#mergestatestatus
 export type MergeStateStatus =
   | 'BEHIND'
   | 'BLOCKED'
@@ -27,8 +28,10 @@ export type MergeStateStatus =
   | 'UNKNOWN'
   | 'UNSTABLE'
 
+// https://docs.github.com/en/graphql/reference/enums#mergeablestate
 export type MergeableState = 'CONFLICTING' | 'MERGEABLE' | 'UNKNOWN'
 
+// https://docs.github.com/en/graphql/reference/enums#statusstate
 export type StatusState =
   | 'ERROR'
   | 'EXPECTED'
@@ -36,6 +39,7 @@ export type StatusState =
   | 'PENDING'
   | 'SUCCESS'
 
+// https://docs.github.com/en/graphql/reference/enums#checkconclusionstate
 export type CheckConclusionState =
   | 'ACTION_REQUIRED'
   | 'CANCELLED'

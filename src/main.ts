@@ -98,7 +98,10 @@ async function maybeUpdateBranchAndMerge(
   }
 
   const passPrs = availablePrs.filter(pr => isStatusCheckPassPr(pr, condition))
-  const cleanPr = passPrs.find(pr => pr.mergeStateStatus === 'CLEAN')
+  const cleanPr = passPrs.find(
+    // Also allow UNSTABLE as we check via [isStatusCheckPassPr] and some checks maybe ignorable
+    pr => pr.mergeStateStatus === 'CLEAN' || pr.mergeStateStatus === 'UNSTABLE'
+  )
   if (cleanPr) {
     core.info(`Merge PR #${cleanPr.number}.`)
     await mergePullRequest(ctx, cleanPr.id)
