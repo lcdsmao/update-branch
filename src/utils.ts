@@ -4,9 +4,11 @@ export function isPendingMergePr(
   pr: PullRequestInfo,
   condition: Condition
 ): boolean {
+  const check = pr.commits.nodes[0].commit.statusCheckRollup
+  const checkNodes = check.contexts.nodes
   return (
     isSatisfyBasicConditionPr(pr, condition) &&
-    pr.commits.nodes[0].commit.statusCheckRollup.state === 'PENDING'
+    (checkNodes.some(v => v.state === 'PENDING') || check.state === 'PENDING')
   )
 }
 
