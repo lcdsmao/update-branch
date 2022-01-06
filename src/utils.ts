@@ -1,3 +1,4 @@
+import minimatch from 'minimatch'
 import {Condition, PullRequestInfo} from './type'
 
 export function isPendingMergePr(
@@ -36,7 +37,8 @@ function isSatisfyBasicConditionPr(
     pr.mergeable === 'MERGEABLE' &&
     pr.reviews.totalCount >= condition.requiredApprovals &&
     pr.reviewRequests.totalCount === 0 &&
-    hasLabels(pr, condition)
+    hasLabels(pr, condition) &&
+    minimatch(pr.baseRefName, condition.branchNamePattern)
   )
 }
 

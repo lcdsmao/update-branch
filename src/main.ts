@@ -1,5 +1,6 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
+import {getBranchProtectionRules as getBranchProtectionRule} from './branchProtection'
 import {createIssue, findCreatedIssueWithBodyPrefix, updateIssue} from './issue'
 import {
   enablePullRequestAutoMerge,
@@ -14,29 +15,45 @@ import {isPendingMergePr, isStatusCheckPassPr, stringify} from './utils'
 
 async function run(): Promise<void> {
   try {
+    const protectedBranchNamePattern = core.getInput(
+      'protectedBranchNamePattern'
+    )
     const token = core.getInput('token')
     const autoMergeMethod = core.getInput('autoMergeMethod')
-    const requiredApprovals = parseInt(core.getInput('requiredApprovals'))
-    const requiredStatusChecks = core
-      .getInput('requiredStatusChecks')
-      .split('\n')
-      .filter(s => s !== '')
     const requiredLabels = core
       .getInput('requiredLabels')
       .split('\n')
       .filter(s => s !== '')
+
+    const octokit = github.getOctokit(token)
+    const {owner, repo} = github.context.repo
+    const ctx: GhContext = {octokit, owner, repo, autoMergeMethod}
+
+    const branchProtectionRule = await getBranchProtectionRule(
+      ctx,
+      protectedBranchNamePattern
+    )
+    if (!branchProtectionRule) {
+      core.info(
+        `Not found branch protection rule with name pattern of ${
+          protectedBranchNamePattern
+            ? protectedBranchNamePattern
+            : 'main or master'
+        }.`
+      )
+      return
+    }
+
     const condition: Condition = {
-      requiredApprovals,
-      requiredStatusChecks,
+      branchNamePattern: branchProtectionRule.pattern,
+      requiredApprovals: branchProtectionRule.requiredApprovingReviewCount ?? 0,
+      requiredStatusChecks:
+        branchProtectionRule.requiredStatusCheckContexts ?? [],
       requiredLabels
     }
 
     core.info('Condition:')
     core.info(stringify(condition))
-
-    const octokit = github.getOctokit(token)
-    const {owner, repo} = github.context.repo
-    const ctx: GhContext = {octokit, owner, repo, autoMergeMethod}
 
     const viewerName = await getViewerName(ctx)
     const {recordIssue, recordBody} = await getRecordIssue(ctx, viewerName)
