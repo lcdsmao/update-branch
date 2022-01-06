@@ -155,9 +155,14 @@ async function getRecordIssue(
 
 function parseIssueBody(body: string): RecordBody {
   try {
-    const json = body.split('```json').at(-1)?.split('```')?.at(0)
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return JSON.parse(json!)
+    const json = body
+      .split('```json')
+      ?.filter(e => e)
+      .at(-1)
+      ?.split('```')
+      ?.filter(e => e)
+      ?.at(0)
+    return JSON.parse(json ?? '')
   } catch (e) {
     return {}
   }
@@ -166,7 +171,7 @@ function parseIssueBody(body: string): RecordBody {
 function createIssueBody(body: RecordBody): string {
   return `
 ${issueBodyPrefix}
-This issue provides [lcdsmao/update](https://github.com/lcdsmao/update-branch) status.
+This issue provides [lcdsmao/update-branch](https://github.com/lcdsmao/update-branch) status.
 
 Status:
 

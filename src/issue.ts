@@ -27,7 +27,7 @@ export async function findCreatedIssueWithBodyPrefix(
       createdBy
     }
   )
-  return data.repository.issues.nodes.find(v => v.body.startsWith(bodyPrefix))
+  return data.repository.issues.nodes.find(v => v.body.includes(bodyPrefix))
 }
 
 export async function createIssue(
