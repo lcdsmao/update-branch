@@ -22,8 +22,4 @@ jobs:
       - uses: ./
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          requiredApprovals: 2
           requiredLabels: auto-merge
-          requiredStatusChecks: |
-            build
-            test
