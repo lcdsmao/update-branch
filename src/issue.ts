@@ -15,8 +15,8 @@ export async function findCreatedIssueWithBodyPrefix(
         repository(name: $repo, owner: $owner) {
           issues(first: 100, filterBy: {createdBy: $createdBy}, states: OPEN) {
             nodes {
+              id
               body
-              number
             }
           }
         }
