@@ -16,7 +16,41 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.updateIssue = exports.getIssue = void 0;
+exports.updateIssue = exports.getIssue = exports.createIssue = exports.findCreatedIssueWithBodyPrefix = void 0;
+function findCreatedIssueWithBodyPrefix(ctx, createdBy, bodyPrefix) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const data = yield ctx.octokit.graphql(`query ($owner: String!, $repo: String!, $createdBy: String!) {
+        repository(name: $repo, owner: $owner) {
+          issues(first: 100, filterBy: {createdBy: $createdBy}, states: OPEN) {
+            nodes {
+              body
+              number
+            }
+          }
+        }
+      }`, {
+            owner: ctx.owner,
+            repo: ctx.repo,
+            createdBy
+        });
+        return data.repository.issues.nodes.find(v => v.body.startsWith(bodyPrefix));
+    });
+}
+exports.findCreatedIssueWithBodyPrefix = findCreatedIssueWithBodyPrefix;
+function createIssue(ctx, title) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const response = yield ctx.octokit.request('POST /repos/{owner}/{repo}/issues', {
+            owner: ctx.owner,
+            repo: ctx.repo,
+            title
+        });
+        return {
+            id: response.data.node_id,
+            body: ''
+        };
+    });
+}
+exports.createIssue = createIssue;
 function getIssue(ctx, num) {
     return __awaiter(this, void 0, void 0, function* () {
         const data = yield ctx.octokit.graphql(`query ($owner: String!, $repo: String!, $num: Int!) {
@@ -90,13 +124,13 @@ const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
 const issue_1 = __nccwpck_require__(6018);
 const pullRequest_1 = __nccwpck_require__(7829);
+const user_1 = __nccwpck_require__(7727);
 const utils_1 = __nccwpck_require__(918);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const token = core.getInput('token');
             const autoMergeMethod = core.getInput('autoMergeMethod');
-            const recordIssueNumber = parseInt(core.getInput('recordIssueNumber'));
             const requiredApprovals = parseInt(core.getInput('requiredApprovals'));
             const requiredStatusChecks = core
                 .getInput('requiredStatusChecks')
@@ -116,7 +150,8 @@ function run() {
             const octokit = github.getOctokit(token);
             const { owner, repo } = github.context.repo;
             const ctx = { octokit, owner, repo, autoMergeMethod };
-            const { recordIssue, recordBody } = yield getRecordIssue(ctx, recordIssueNumber);
+            const viewerName = yield (0, user_1.getViewerName)(ctx);
+            const { recordIssue, recordBody } = yield getRecordIssue(ctx, viewerName);
             if (recordBody.editing) {
                 core.info('Other actions are editing record. Exit.');
                 return;
@@ -187,25 +222,47 @@ function maybeUpdateBranchAndMerge(ctx, recordBody, condition) {
 }
 function updateRecordIssueBody(ctx, recordIssue, body) {
     return __awaiter(this, void 0, void 0, function* () {
-        yield (0, issue_1.updateIssue)(ctx, Object.assign(Object.assign({}, recordIssue), { body: (0, utils_1.stringify)(body) }));
+        yield (0, issue_1.updateIssue)(ctx, Object.assign(Object.assign({}, recordIssue), { body: createIssueBody(body) }));
     });
 }
-function getRecordIssue(ctx, recordIssueNumber) {
+function getRecordIssue(ctx, createdBy) {
     return __awaiter(this, void 0, void 0, function* () {
-        const recordIssue = yield (0, issue_1.getIssue)(ctx, recordIssueNumber);
-        let recordBody;
-        try {
-            recordBody = JSON.parse(recordIssue.body);
+        let recordIssue = yield (0, issue_1.findCreatedIssueWithBodyPrefix)(ctx, createdBy, issueBodyPrefix);
+        if (!recordIssue) {
+            recordIssue = yield (0, issue_1.createIssue)(ctx, issueTitle);
         }
-        catch (e) {
-            recordBody = {};
-        }
+        const recordBody = parseIssueBody(recordIssue.body);
         return {
             recordIssue,
             recordBody
         };
     });
 }
+function parseIssueBody(body) {
+    var _a, _b;
+    try {
+        const json = (_b = (_a = body.split('```json').at(-1)) === null || _a === void 0 ? void 0 : _a.split('```')) === null || _b === void 0 ? void 0 : _b.at(0);
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        return JSON.parse(json);
+    }
+    catch (e) {
+        return {};
+    }
+}
+function createIssueBody(body) {
+    return `
+${issueBodyPrefix}
+This issue provides [lcdsmao/update](https://github.com/lcdsmao/update-branch) status.
+
+Status:
+
+\`\`\`json
+${(0, utils_1.stringify)(body)}
+\`\`\`
+`;
+}
+const issueBodyPrefix = '<!-- lcdsmao/update-branch -->';
+const issueTitle = 'Update Branch Dashboard';
 run();
 
 
@@ -364,6 +421,38 @@ const pullRequestFragment = `
       }
     }
   }`;
+
+
+/***/ }),
+
+/***/ 7727:
+/***/ (function(__unused_webpack_module, exports) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.getViewerName = void 0;
+function getViewerName(ctx) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const data = yield ctx.octokit.graphql(`
+    query {
+      viewer {
+        login
+      }
+    }`);
+        return data.viewer.login;
+    });
+}
+exports.getViewerName = getViewerName;
 
 
 /***/ }),
