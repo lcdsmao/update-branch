@@ -73,7 +73,7 @@ export interface PullRequestInfo {
 }
 
 export interface IssueInfo {
-  id: number
+  id: string
   body: string
 }
 

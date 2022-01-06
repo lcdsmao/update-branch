@@ -43,7 +43,7 @@ export async function createIssue(
     }
   )
   return {
-    id: response.data.id,
+    id: response.data.node_id,
     body: ''
   }
 }
