@@ -15,15 +15,20 @@ import {isPendingMergePr, isStatusCheckPassPr, stringify} from './utils'
 
 async function run(): Promise<void> {
   try {
-    const protectedBranchNamePattern = core.getInput(
-      'protectedBranchNamePattern'
-    )
     const token = core.getInput('token')
     const autoMergeMethod = core.getInput('autoMergeMethod')
     const requiredLabels = core
       .getInput('requiredLabels')
       .split('\n')
       .filter(s => s !== '')
+    const requiredApprovals = parseInt(core.getInput('requiredApprovals'))
+    const requiredStatusChecks = core
+      .getInput('requiredStatusChecks')
+      .split('\n')
+      .filter(s => s !== '')
+    const protectedBranchNamePattern = core.getInput(
+      'protectedBranchNamePattern'
+    )
 
     const octokit = github.getOctokit(token)
     const {owner, repo} = github.context.repo
@@ -33,21 +38,16 @@ async function run(): Promise<void> {
       ctx,
       protectedBranchNamePattern
     )
-    if (!branchProtectionRule) {
-      throw Error(
-        `Not found branch protection rule with name pattern of ${
-          protectedBranchNamePattern
-            ? protectedBranchNamePattern
-            : 'main or master'
-        }.`
-      )
-    }
 
     const condition: Condition = {
-      branchNamePattern: branchProtectionRule.pattern,
-      requiredApprovals: branchProtectionRule.requiredApprovingReviewCount ?? 0,
-      requiredStatusChecks:
-        branchProtectionRule.requiredStatusCheckContexts ?? [],
+      branchNamePattern: branchProtectionRule?.pattern,
+      requiredApprovals:
+        requiredApprovals ||
+        (branchProtectionRule?.requiredApprovingReviewCount ?? 0),
+      requiredStatusChecks: [
+        ...requiredStatusChecks,
+        ...(branchProtectionRule?.requiredStatusCheckContexts ?? [])
+      ],
       requiredLabels
     }
 
