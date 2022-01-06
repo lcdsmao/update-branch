@@ -185,10 +185,9 @@ function run() {
             const ctx = { octokit, owner, repo, autoMergeMethod };
             const branchProtectionRule = yield (0, branchProtection_1.getBranchProtectionRules)(ctx, protectedBranchNamePattern);
             if (!branchProtectionRule) {
-                core.info(`Not found branch protection rule with name pattern of ${protectedBranchNamePattern
+                throw Error(`Not found branch protection rule with name pattern of ${protectedBranchNamePattern
                     ? protectedBranchNamePattern
                     : 'main or master'}.`);
-                return;
             }
             const condition = {
                 branchNamePattern: branchProtectionRule.pattern,
