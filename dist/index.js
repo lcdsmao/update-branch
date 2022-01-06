@@ -173,26 +173,30 @@ function run() {
     var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const protectedBranchNamePattern = core.getInput('protectedBranchNamePattern');
             const token = core.getInput('token');
             const autoMergeMethod = core.getInput('autoMergeMethod');
             const requiredLabels = core
                 .getInput('requiredLabels')
                 .split('\n')
                 .filter(s => s !== '');
+            const requiredApprovals = parseInt(core.getInput('requiredApprovals'));
+            const requiredStatusChecks = core
+                .getInput('requiredStatusChecks')
+                .split('\n')
+                .filter(s => s !== '');
+            const protectedBranchNamePattern = core.getInput('protectedBranchNamePattern');
             const octokit = github.getOctokit(token);
             const { owner, repo } = github.context.repo;
             const ctx = { octokit, owner, repo, autoMergeMethod };
             const branchProtectionRule = yield (0, branchProtection_1.getBranchProtectionRules)(ctx, protectedBranchNamePattern);
-            if (!branchProtectionRule) {
-                throw Error(`Not found branch protection rule with name pattern of ${protectedBranchNamePattern
-                    ? protectedBranchNamePattern
-                    : 'main or master'}.`);
-            }
             const condition = {
-                branchNamePattern: branchProtectionRule.pattern,
-                requiredApprovals: (_a = branchProtectionRule.requiredApprovingReviewCount) !== null && _a !== void 0 ? _a : 0,
-                requiredStatusChecks: (_b = branchProtectionRule.requiredStatusCheckContexts) !== null && _b !== void 0 ? _b : [],
+                branchNamePattern: branchProtectionRule === null || branchProtectionRule === void 0 ? void 0 : branchProtectionRule.pattern,
+                requiredApprovals: requiredApprovals ||
+                    ((_a = branchProtectionRule === null || branchProtectionRule === void 0 ? void 0 : branchProtectionRule.requiredApprovingReviewCount) !== null && _a !== void 0 ? _a : 0),
+                requiredStatusChecks: [
+                    ...requiredStatusChecks,
+                    ...((_b = branchProtectionRule === null || branchProtectionRule === void 0 ? void 0 : branchProtectionRule.requiredStatusCheckContexts) !== null && _b !== void 0 ? _b : [])
+                ],
                 requiredLabels
             };
             core.info('Condition:');
@@ -538,12 +542,13 @@ function stringify(obj) {
 exports.stringify = stringify;
 // Except status check
 function isSatisfyBasicConditionPr(pr, condition) {
+    var _a;
     return (!pr.merged &&
         pr.mergeable === 'MERGEABLE' &&
         pr.reviews.totalCount >= condition.requiredApprovals &&
         pr.reviewRequests.totalCount === 0 &&
         hasLabels(pr, condition) &&
-        (0, minimatch_1.default)(pr.baseRefName, condition.branchNamePattern));
+        (0, minimatch_1.default)(pr.baseRefName, (_a = condition.branchNamePattern) !== null && _a !== void 0 ? _a : '*'));
 }
 function hasLabels(pr, condition) {
     const labelNames = pr.labels.nodes.map(v => v.name);
