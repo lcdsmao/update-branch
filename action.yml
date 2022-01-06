@@ -8,9 +8,6 @@ inputs:
   token:
     required: true
     description: 'Github Token'
-  recordIssueNumber:
-    required: true
-    description: 'Record working progress'
   autoMergeMethod:
     required: false
     description: 'Method to use when enable pull request auto merge'

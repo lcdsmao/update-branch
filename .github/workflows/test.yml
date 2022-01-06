@@ -22,7 +22,6 @@ jobs:
       - uses: ./
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          recordIssueNumber: 36
           requiredApprovals: 2
           requiredLabels: auto-merge
           requiredStatusChecks: |

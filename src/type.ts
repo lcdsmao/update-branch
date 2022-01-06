@@ -73,7 +73,7 @@ export interface PullRequestInfo {
 }
 
 export interface IssueInfo {
-  id: string
+  id: number
   body: string
 }
 
@@ -117,6 +117,18 @@ export type RepositoryGetPullRequest = RepositoryData<{
   pullRequest: PullRequestInfo
 }>
 
+export type RepositoryListIssue = RepositoryData<{
+  issues: {
+    nodes: IssueInfo[]
+  }
+}>
+
 export type RepositoryGetIssue = RepositoryData<{
   issue: IssueInfo
 }>
+
+export interface ViewerData {
+  viewer: {
+    login: string
+  }
+}

@@ -1,6 +1,6 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
-import {getIssue, updateIssue} from './issue'
+import {createIssue, findCreatedIssueWithBodyPrefix, updateIssue} from './issue'
 import {
   enablePullRequestAutoMerge,
   getPullRequest,
@@ -9,13 +9,13 @@ import {
   updateBranch
 } from './pullRequest'
 import {Condition, GhContext, IssueInfo, RecordBody} from './type'
+import {getViewerName} from './user'
 import {isPendingMergePr, isStatusCheckPassPr, stringify} from './utils'
 
 async function run(): Promise<void> {
   try {
     const token = core.getInput('token')
     const autoMergeMethod = core.getInput('autoMergeMethod')
-    const recordIssueNumber = parseInt(core.getInput('recordIssueNumber'))
     const requiredApprovals = parseInt(core.getInput('requiredApprovals'))
     const requiredStatusChecks = core
       .getInput('requiredStatusChecks')
@@ -38,10 +38,8 @@ async function run(): Promise<void> {
     const {owner, repo} = github.context.repo
     const ctx: GhContext = {octokit, owner, repo, autoMergeMethod}
 
-    const {recordIssue, recordBody} = await getRecordIssue(
-      ctx,
-      recordIssueNumber
-    )
+    const viewerName = await getViewerName(ctx)
+    const {recordIssue, recordBody} = await getRecordIssue(ctx, viewerName)
     if (recordBody.editing) {
       core.info('Other actions are editing record. Exit.')
       return
@@ -138,9 +136,16 @@ async function updateRecordIssueBody(
 
 async function getRecordIssue(
   ctx: GhContext,
-  recordIssueNumber: number
+  createdBy: string
 ): Promise<{recordIssue: IssueInfo; recordBody: RecordBody}> {
-  const recordIssue = await getIssue(ctx, recordIssueNumber)
+  let recordIssue = await findCreatedIssueWithBodyPrefix(
+    ctx,
+    createdBy,
+    issueBodyPrefix
+  )
+  if (!recordIssue) {
+    recordIssue = await createIssue(ctx, issueTitle)
+  }
   let recordBody: RecordBody
   try {
     recordBody = JSON.parse(recordIssue.body)
@@ -152,5 +157,8 @@ async function getRecordIssue(
     recordBody
   }
 }
+
+const issueBodyPrefix = '<!-- lcdsmao/update-branch -->'
+const issueTitle = 'Update Branch Dashboard'
 
 run()
