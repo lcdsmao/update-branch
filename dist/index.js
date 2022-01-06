@@ -23,8 +23,8 @@ function findCreatedIssueWithBodyPrefix(ctx, createdBy, bodyPrefix) {
         repository(name: $repo, owner: $owner) {
           issues(first: 100, filterBy: {createdBy: $createdBy}, states: OPEN) {
             nodes {
+              id
               body
-              number
             }
           }
         }
@@ -242,7 +242,7 @@ function parseIssueBody(body) {
     var _a, _b, _c, _d;
     try {
         const json = (_d = (_c = (_b = (_a = body
-            .split('```json')) === null || _a === void 0 ? void 0 : _a.filter(e => e).at(-1)) === null || _b === void 0 ? void 0 : _b.split('```')) === null || _c === void 0 ? void 0 : _c.filter(e => e)) === null || _d === void 0 ? void 0 : _d.at(0);
+            .split(issueBodyStatusPrefix)) === null || _a === void 0 ? void 0 : _a.filter(e => e).at(-1)) === null || _b === void 0 ? void 0 : _b.split(issueBodyStatusSuffix)) === null || _c === void 0 ? void 0 : _c.filter(e => e)) === null || _d === void 0 ? void 0 : _d.at(0);
         return JSON.parse(json !== null && json !== void 0 ? json : '');
     }
     catch (e) {
@@ -256,13 +256,15 @@ This issue provides [lcdsmao/update-branch](https://github.com/lcdsmao/update-br
 
 Status:
 
-\`\`\`json
+${issueBodyStatusPrefix}
 ${(0, utils_1.stringify)(body)}
-\`\`\`
+${issueBodyStatusSuffix}
 `;
 }
-const issueBodyPrefix = '<!-- lcdsmao/update-branch -->';
 const issueTitle = 'Update Branch Dashboard';
+const issueBodyPrefix = '<!-- lcdsmao/update-branch -->';
+const issueBodyStatusPrefix = '```json';
+const issueBodyStatusSuffix = '```';
 run();
 
 
