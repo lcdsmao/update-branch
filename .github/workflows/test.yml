@@ -22,4 +22,8 @@ jobs:
       - uses: ./
         with:
           token: ${{ secrets.ACTION_PAT }}
+          requiredApprovals: 2
           requiredLabels: auto-merge
+          requiredStatusChecks: |
+            build
+            test
