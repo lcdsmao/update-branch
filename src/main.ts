@@ -34,14 +34,13 @@ async function run(): Promise<void> {
       protectedBranchNamePattern
     )
     if (!branchProtectionRule) {
-      core.info(
+      throw Error(
         `Not found branch protection rule with name pattern of ${
           protectedBranchNamePattern
             ? protectedBranchNamePattern
             : 'main or master'
         }.`
       )
-      return
     }
 
     const condition: Condition = {
