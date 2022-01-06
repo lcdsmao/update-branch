@@ -46,7 +46,7 @@ jobs:
   update-branch:
     runs-on: ubuntu-latest
     steps:
-      - uses: lcdsmao/update-branch@v2
+      - uses: lcdsmao/update-branch@v3
         with:
           # Personal access token
           # https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token 
