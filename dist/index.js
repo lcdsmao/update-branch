@@ -33,7 +33,7 @@ function findCreatedIssueWithBodyPrefix(ctx, createdBy, bodyPrefix) {
             repo: ctx.repo,
             createdBy
         });
-        return data.repository.issues.nodes.find(v => v.body.startsWith(bodyPrefix));
+        return data.repository.issues.nodes.find(v => v.body.includes(bodyPrefix));
     });
 }
 exports.findCreatedIssueWithBodyPrefix = findCreatedIssueWithBodyPrefix;
@@ -239,11 +239,11 @@ function getRecordIssue(ctx, createdBy) {
     });
 }
 function parseIssueBody(body) {
-    var _a, _b;
+    var _a, _b, _c, _d;
     try {
-        const json = (_b = (_a = body.split('```json').at(-1)) === null || _a === void 0 ? void 0 : _a.split('```')) === null || _b === void 0 ? void 0 : _b.at(0);
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        return JSON.parse(json);
+        const json = (_d = (_c = (_b = (_a = body
+            .split('```json')) === null || _a === void 0 ? void 0 : _a.filter(e => e).at(-1)) === null || _b === void 0 ? void 0 : _b.split('```')) === null || _c === void 0 ? void 0 : _c.filter(e => e)) === null || _d === void 0 ? void 0 : _d.at(0);
+        return JSON.parse(json !== null && json !== void 0 ? json : '');
     }
     catch (e) {
         return {};
@@ -252,7 +252,7 @@ function parseIssueBody(body) {
 function createIssueBody(body) {
     return `
 ${issueBodyPrefix}
-This issue provides [lcdsmao/update](https://github.com/lcdsmao/update-branch) status.
+This issue provides [lcdsmao/update-branch](https://github.com/lcdsmao/update-branch) status.
 
 Status:
 
