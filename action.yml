@@ -7,24 +7,18 @@ branding:
 inputs:
   token:
     required: true
-    description: 'Github Token'
-  recordIssueNumber:
-    required: true
-    description: 'Record working progress'
+    description: 'Require personal access token to access branch protection rules or trigger other workflows.'
   autoMergeMethod:
     required: false
-    description: 'Method to use when enable pull request auto merge'
+    description: 'Method to use when enable pull request auto merge.'
     default: 'MERGE'
-  requiredApprovals:
-    required: false
-    description: 'Count of required approval'
-    default: '0'
   requiredLabels:
     required: false
-    description: 'Labels need to be present for a pull request'
-  requiredStatusChecks:
-    required: true
-    description: 'Multiple status checks required to be success'
+    description: 'Labels need to be present for a pull request.'
+  protectedBranchNamePattern:
+    required: false
+    description: 'The name pattern of the base branch that your pull request wants to merge into. Branch protection rule with the same name pattern must be existed. If not set, the default behavior is to find the name pattern of main or master.'
+    default: ''
 runs:
   using: 'node12'
   main: 'dist/index.js'

@@ -1,6 +1,7 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
-import {getIssue, updateIssue} from './issue'
+import {getBranchProtectionRules as getBranchProtectionRule} from './branchProtection'
+import {createIssue, findCreatedIssueWithBodyPrefix, updateIssue} from './issue'
 import {
   enablePullRequestAutoMerge,
   getPullRequest,
@@ -9,39 +10,52 @@ import {
   updateBranch
 } from './pullRequest'
 import {Condition, GhContext, IssueInfo, RecordBody} from './type'
+import {getViewerName} from './user'
 import {isPendingMergePr, isStatusCheckPassPr, stringify} from './utils'
 
 async function run(): Promise<void> {
   try {
+    const protectedBranchNamePattern = core.getInput(
+      'protectedBranchNamePattern'
+    )
     const token = core.getInput('token')
     const autoMergeMethod = core.getInput('autoMergeMethod')
-    const recordIssueNumber = parseInt(core.getInput('recordIssueNumber'))
-    const requiredApprovals = parseInt(core.getInput('requiredApprovals'))
-    const requiredStatusChecks = core
-      .getInput('requiredStatusChecks')
-      .split('\n')
-      .filter(s => s !== '')
     const requiredLabels = core
       .getInput('requiredLabels')
       .split('\n')
       .filter(s => s !== '')
+
+    const octokit = github.getOctokit(token)
+    const {owner, repo} = github.context.repo
+    const ctx: GhContext = {octokit, owner, repo, autoMergeMethod}
+
+    const branchProtectionRule = await getBranchProtectionRule(
+      ctx,
+      protectedBranchNamePattern
+    )
+    if (!branchProtectionRule) {
+      throw Error(
+        `Not found branch protection rule with name pattern of ${
+          protectedBranchNamePattern
+            ? protectedBranchNamePattern
+            : 'main or master'
+        }.`
+      )
+    }
+
     const condition: Condition = {
-      requiredApprovals,
-      requiredStatusChecks,
+      branchNamePattern: branchProtectionRule.pattern,
+      requiredApprovals: branchProtectionRule.requiredApprovingReviewCount ?? 0,
+      requiredStatusChecks:
+        branchProtectionRule.requiredStatusCheckContexts ?? [],
       requiredLabels
     }
 
     core.info('Condition:')
     core.info(stringify(condition))
 
-    const octokit = github.getOctokit(token)
-    const {owner, repo} = github.context.repo
-    const ctx: GhContext = {octokit, owner, repo, autoMergeMethod}
-
-    const {recordIssue, recordBody} = await getRecordIssue(
-      ctx,
-      recordIssueNumber
-    )
+    const viewerName = await getViewerName(ctx)
+    const {recordIssue, recordBody} = await getRecordIssue(ctx, viewerName)
     if (recordBody.editing) {
       core.info('Other actions are editing record. Exit.')
       return
@@ -132,25 +146,60 @@ async function updateRecordIssueBody(
 ): Promise<void> {
   await updateIssue(ctx, {
     ...recordIssue,
-    body: stringify(body)
+    body: createIssueBody(body)
   })
 }
 
 async function getRecordIssue(
   ctx: GhContext,
-  recordIssueNumber: number
+  createdBy: string
 ): Promise<{recordIssue: IssueInfo; recordBody: RecordBody}> {
-  const recordIssue = await getIssue(ctx, recordIssueNumber)
-  let recordBody: RecordBody
-  try {
-    recordBody = JSON.parse(recordIssue.body)
-  } catch (e) {
-    recordBody = {}
+  let recordIssue = await findCreatedIssueWithBodyPrefix(
+    ctx,
+    createdBy,
+    issueBodyPrefix
+  )
+  if (!recordIssue) {
+    recordIssue = await createIssue(ctx, issueTitle)
   }
+  const recordBody = parseIssueBody(recordIssue.body)
   return {
     recordIssue,
     recordBody
   }
 }
+
+function parseIssueBody(body: string): RecordBody {
+  try {
+    const json = body
+      .split(issueBodyStatusPrefix)
+      .filter(e => e)
+      .at(-1)
+      ?.split(issueBodyStatusSuffix)
+      .filter(e => e)
+      .at(0)
+    return JSON.parse(json ?? '')
+  } catch (e) {
+    return {}
+  }
+}
+
+function createIssueBody(body: RecordBody): string {
+  return `
+${issueBodyPrefix}
+This issue provides [lcdsmao/update-branch](https://github.com/lcdsmao/update-branch) status.
+
+Status:
+
+${issueBodyStatusPrefix}
+${stringify(body)}
+${issueBodyStatusSuffix}
+`
+}
+
+const issueTitle = 'Update Branch Dashboard'
+const issueBodyPrefix = '<!-- lcdsmao/update-branch -->'
+const issueBodyStatusPrefix = '```json'
+const issueBodyStatusSuffix = '```'
 
 run()

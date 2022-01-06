@@ -8,6 +8,7 @@ export interface GhContext {
 }
 
 export interface Condition {
+  branchNamePattern: string
   requiredApprovals: number
   requiredStatusChecks: string[]
   requiredLabels: string[]
@@ -54,6 +55,7 @@ export type CheckConclusionState =
 export interface PullRequestInfo {
   id: string
   title: string
+  baseRefName: string
   reviews: {
     totalCount: number
   }
@@ -103,6 +105,12 @@ export interface StatusCheckInfo {
   state?: StatusState
 }
 
+export interface BranchProtectionRuleInfo {
+  pattern: string
+  requiredApprovingReviewCount?: number
+  requiredStatusCheckContexts: string[]
+}
+
 export interface RepositoryData<T> {
   repository: T
 }
@@ -117,6 +125,24 @@ export type RepositoryGetPullRequest = RepositoryData<{
   pullRequest: PullRequestInfo
 }>
 
+export type RepositoryListIssue = RepositoryData<{
+  issues: {
+    nodes: IssueInfo[]
+  }
+}>
+
 export type RepositoryGetIssue = RepositoryData<{
   issue: IssueInfo
 }>
+
+export type RepositoryListBranchProtectionRule = RepositoryData<{
+  branchProtectionRules: {
+    nodes: BranchProtectionRuleInfo[]
+  }
+}>
+
+export interface ViewerData {
+  viewer: {
+    login: string
+  }
+}

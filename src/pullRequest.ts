@@ -121,6 +121,7 @@ async function listPullRequests(ctx: GhContext): Promise<PullRequestInfo[]> {
 const pullRequestFragment = `
   id
   title
+  baseRefName
   number
   merged
   mergeable

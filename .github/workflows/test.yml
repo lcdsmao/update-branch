@@ -21,10 +21,5 @@ jobs:
       - uses: actions/checkout@v2
       - uses: ./
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          recordIssueNumber: 36
-          requiredApprovals: 2
+          token: ${{ secrets.ACTION_PAT }}
           requiredLabels: auto-merge
-          requiredStatusChecks: |
-            build
-            test
