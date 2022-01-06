@@ -156,10 +156,10 @@ async function getRecordIssue(
 function parseIssueBody(body: string): RecordBody {
   try {
     const json = body
-      .split('```json')
+      .split(issueBodyStatusPrefix)
       ?.filter(e => e)
       .at(-1)
-      ?.split('```')
+      ?.split(issueBodyStatusSuffix)
       ?.filter(e => e)
       ?.at(0)
     return JSON.parse(json ?? '')
@@ -175,13 +175,15 @@ This issue provides [lcdsmao/update-branch](https://github.com/lcdsmao/update-br
 
 Status:
 
-\`\`\`json
+${issueBodyStatusPrefix}
 ${stringify(body)}
-\`\`\`
+${issueBodyStatusSuffix}
 `
 }
 
-const issueBodyPrefix = '<!-- lcdsmao/update-branch -->'
 const issueTitle = 'Update Branch Dashboard'
+const issueBodyPrefix = '<!-- lcdsmao/update-branch -->'
+const issueBodyStatusPrefix = '```json'
+const issueBodyStatusSuffix = '```'
 
 run()
