@@ -157,11 +157,11 @@ function parseIssueBody(body: string): RecordBody {
   try {
     const json = body
       .split(issueBodyStatusPrefix)
-      ?.filter(e => e)
+      .filter(e => e)
       .at(-1)
       ?.split(issueBodyStatusSuffix)
-      ?.filter(e => e)
-      ?.at(0)
+      .filter(e => e)
+      .at(0)
     return JSON.parse(json ?? '')
   } catch (e) {
     return {}
