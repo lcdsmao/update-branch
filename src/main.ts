@@ -130,7 +130,7 @@ async function updateRecordIssueBody(
 ): Promise<void> {
   await updateIssue(ctx, {
     ...recordIssue,
-    body: stringify(body)
+    body: createIssueBody(body)
   })
 }
 
@@ -146,16 +146,34 @@ async function getRecordIssue(
   if (!recordIssue) {
     recordIssue = await createIssue(ctx, issueTitle)
   }
-  let recordBody: RecordBody
-  try {
-    recordBody = JSON.parse(recordIssue.body)
-  } catch (e) {
-    recordBody = {}
-  }
+  const recordBody = parseIssueBody(recordIssue.body)
   return {
     recordIssue,
     recordBody
   }
+}
+
+function parseIssueBody(body: string): RecordBody {
+  try {
+    const json = body.split('```json').at(-1)?.split('```')?.at(0)
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return JSON.parse(json!)
+  } catch (e) {
+    return {}
+  }
+}
+
+function createIssueBody(body: RecordBody): string {
+  return `
+${issueBodyPrefix}
+This issue provides [lcdsmao/update](https://github.com/lcdsmao/update-branch) status.
+
+Status:
+
+\`\`\`json
+${stringify(body)}
+\`\`\`
+`
 }
 
 const issueBodyPrefix = '<!-- lcdsmao/update-branch -->'
