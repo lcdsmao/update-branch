@@ -14,18 +14,13 @@ Inspired by [Merge Queue feature of Mergify](https://mergify.io/features/merge-q
 
 ## Quick Start
 
+> This action only has effect if you enabled `Settings/Branches/YourBranchProtectionRule/Require status checks to pass before merging/Require branches to be up to date before merging`.
+
 1. Enable `Allow auto-merge` in `Settings/Options`.
 
-2. (Optional) Create a branch protection rule in `Settings/Branches`.
-
-Support checks:
-
-- `Require approvals`
-- `Status checks that are required`
-
-This feature requires personal access token that has enough permission.
-
 3. Create a workflow file (`.github/workflow/update-branch.yaml`):
+
+Example:
 
 ```yaml
 name: Update branch
@@ -54,15 +49,32 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           # One of MERGE, SQUASH, REBASE (default: MERGE)
           autoMergeMethod: SQUASH
-          # Required at least 2 approves (default: 0)
-          requiredApprovals: 2
           # Ignore pull requests without these labels
           requiredLabels: auto-merge
+          # Required at least 2 approves (default: 0)
+          requiredApprovals: 2
           # Required these status checks success
           requiredStatusChecks: |
             build_pr
             WIP
-          # Optional branch name pattern instead of main or master
-          # Status checks will be used
-          # protectedBranchNamePattern: trunk
+```
+
+If you are using a personal access token and it has permission to access branch protection rules, you can set your jobs like:
+
+```yaml
+jobs:
+  update-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: lcdsmao/update-branch@v3
+        with:
+          # Personal access token
+          token: ${{ secrets.MY_PAT }}
+          # One of MERGE, SQUASH, REBASE (default: MERGE)
+          autoMergeMethod: SQUASH
+          # Ignore pull requests without these labels
+          requiredLabels: auto-merge
+          # `Status checks` and `Require approvals` settings will be used
+          # Or ignore this key then the action will automatically find main or master branch protection rule
+          protectedBranchNamePattern: trunk
 ```
