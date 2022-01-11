@@ -295,7 +295,7 @@ function parseIssueBody(body) {
         const json = (_a = body
             .split(issueBodyStatusPrefix)
             .filter(e => e)
-            .at(-1)) === null || _a === void 0 ? void 0 : _a.split(issueBodyStatusSuffix).filter(e => e).at(0);
+            .pop()) === null || _a === void 0 ? void 0 : _a.split(issueBodyStatusSuffix).filter(e => e)[0];
         return JSON.parse(json !== null && json !== void 0 ? json : '');
     }
     catch (e) {

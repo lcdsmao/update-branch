@@ -174,10 +174,9 @@ function parseIssueBody(body: string): RecordBody {
     const json = body
       .split(issueBodyStatusPrefix)
       .filter(e => e)
-      .at(-1)
+      .pop()
       ?.split(issueBodyStatusSuffix)
-      .filter(e => e)
-      .at(0)
+      .filter(e => e)[0]
     return JSON.parse(json ?? '')
   } catch (e) {
     return {}
