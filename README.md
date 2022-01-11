@@ -16,12 +16,14 @@ Inspired by [Merge Queue feature of Mergify](https://mergify.io/features/merge-q
 
 1. Enable `Allow auto-merge` in `Settings/Options`.
 
-2. Create a branch protection rule in `Settings/Branches`
+2. (Optional) Create a branch protection rule in `Settings/Branches`.
 
 Support checks:
 
 - `Require approvals`
 - `Status checks that are required`
+
+This feature requires personal access token that has enough permission.
 
 3. Create a workflow file (`.github/workflow/update-branch.yaml`):
 
@@ -48,12 +50,19 @@ jobs:
     steps:
       - uses: lcdsmao/update-branch@v3
         with:
-          # Personal access token
-          # https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token 
-          token: ${{ secrets.MY_PERSONAL_ACCESS_TOKEN }}
+          # Or use personal access token
+          token: ${{ secrets.GITHUB_TOKEN }}
           # One of MERGE, SQUASH, REBASE (default: MERGE)
           autoMergeMethod: SQUASH
+          # Required at least 2 approves (default: 0)
+          requiredApprovals: 2
+          # Ignore pull requests without these labels
           requiredLabels: auto-merge
+          # Required these status checks success
+          requiredStatusChecks: |
+            build_pr
+            WIP
           # Optional branch name pattern instead of main or master
+          # Status checks will be used
           # protectedBranchNamePattern: trunk
 ```

@@ -8,7 +8,7 @@ export interface GhContext {
 }
 
 export interface Condition {
-  branchNamePattern: string
+  branchNamePattern?: string
   requiredApprovals: number
   requiredStatusChecks: string[]
   requiredLabels: string[]

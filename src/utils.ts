@@ -38,7 +38,7 @@ function isSatisfyBasicConditionPr(
     pr.reviews.totalCount >= condition.requiredApprovals &&
     pr.reviewRequests.totalCount === 0 &&
     hasLabels(pr, condition) &&
-    minimatch(pr.baseRefName, condition.branchNamePattern)
+    minimatch(pr.baseRefName, condition.branchNamePattern ?? '*')
   )
 }
 
