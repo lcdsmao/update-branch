@@ -12,7 +12,7 @@ export async function getBranchProtectionRules(
     await ctx.octokit.graphql(
       `query ($owner: String!, $repo: String!) {
         repository(name: $repo, owner: $owner) {
-          branchProtectionRules(first: 10) {
+          branchProtectionRules(first: ${branchProtectionRuleCount}) {
             nodes {
               requiredApprovingReviewCount
               requiredStatusCheckContexts
@@ -32,3 +32,5 @@ export async function getBranchProtectionRules(
       : v.pattern === 'main' || v.pattern === 'master'
   )
 }
+
+const branchProtectionRuleCount = 10
