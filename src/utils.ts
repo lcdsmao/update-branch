@@ -1,5 +1,5 @@
 import minimatch from 'minimatch'
-import {Condition, PullRequestInfo} from './type'
+import {Condition, PullRequestInfo, RecordBody} from './type'
 
 export function isPendingMergePr(
   pr: PullRequestInfo,
@@ -64,3 +64,34 @@ function isStatusChecksSuccess(
     return check.state === 'SUCCESS'
   }
 }
+
+export function parseIssueBody(body: string): RecordBody {
+  try {
+    const json = body
+      .split(issueBodyStatusPrefix)
+      .filter(e => e)
+      .pop()
+      ?.split(issueBodyStatusSuffix)
+      .filter(e => e)[0]
+    return JSON.parse(json ?? '')
+  } catch (e) {
+    return {}
+  }
+}
+
+export function createIssueBody(body: RecordBody): string {
+  return `
+${issueBodyPrefix}
+This issue provides [lcdsmao/update-branch](https://github.com/lcdsmao/update-branch) status.
+
+Status:
+
+${issueBodyStatusPrefix}
+${stringify(body)}
+${issueBodyStatusSuffix}
+`
+}
+
+export const issueBodyPrefix = '<!-- lcdsmao/update-branch -->'
+export const issueBodyStatusPrefix = '```json'
+export const issueBodyStatusSuffix = '```'

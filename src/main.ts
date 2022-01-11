@@ -11,7 +11,14 @@ import {
 } from './pullRequest'
 import {Condition, GhContext, IssueInfo, RecordBody} from './type'
 import {getViewerName} from './user'
-import {isPendingMergePr, isStatusCheckPassPr, stringify} from './utils'
+import {
+  createIssueBody,
+  isPendingMergePr,
+  isStatusCheckPassPr,
+  issueBodyPrefix,
+  parseIssueBody,
+  stringify
+} from './utils'
 
 async function run(): Promise<void> {
   try {
@@ -169,36 +176,6 @@ async function getRecordIssue(
   }
 }
 
-function parseIssueBody(body: string): RecordBody {
-  try {
-    const json = body
-      .split(issueBodyStatusPrefix)
-      .filter(e => e)
-      .pop()
-      ?.split(issueBodyStatusSuffix)
-      .filter(e => e)[0]
-    return JSON.parse(json ?? '')
-  } catch (e) {
-    return {}
-  }
-}
-
-function createIssueBody(body: RecordBody): string {
-  return `
-${issueBodyPrefix}
-This issue provides [lcdsmao/update-branch](https://github.com/lcdsmao/update-branch) status.
-
-Status:
-
-${issueBodyStatusPrefix}
-${stringify(body)}
-${issueBodyStatusSuffix}
-`
-}
-
 const issueTitle = 'Update Branch Dashboard'
-const issueBodyPrefix = '<!-- lcdsmao/update-branch -->'
-const issueBodyStatusPrefix = '```json'
-const issueBodyStatusSuffix = '```'
 
 run()
