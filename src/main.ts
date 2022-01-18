@@ -72,11 +72,15 @@ async function run(): Promise<void> {
       editing: true
     })
 
-    let newIssueBody: RecordBody = {editing: false}
+    let newRecordBody: RecordBody = {...recordBody, editing: false}
     try {
-      newIssueBody = await maybeUpdateBranchAndMerge(ctx, recordBody, condition)
+      newRecordBody = await maybeUpdateBranchAndMerge(
+        ctx,
+        recordBody,
+        condition
+      )
     } finally {
-      await updateRecordIssueBody(ctx, recordIssue, newIssueBody)
+      await updateRecordIssueBody(ctx, recordIssue, newRecordBody)
     }
   } catch (error) {
     if (error instanceof Error) {
