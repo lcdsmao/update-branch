@@ -21,7 +21,7 @@ function getBranchProtectionRules(ctx, pattern) {
     return __awaiter(this, void 0, void 0, function* () {
         const response = yield ctx.octokit.graphql(`query ($owner: String!, $repo: String!) {
         repository(name: $repo, owner: $owner) {
-          branchProtectionRules(first: 10) {
+          branchProtectionRules(first: ${branchProtectionRuleCount}) {
             nodes {
               requiredApprovingReviewCount
               requiredStatusCheckContexts
@@ -39,6 +39,7 @@ function getBranchProtectionRules(ctx, pattern) {
     });
 }
 exports.getBranchProtectionRules = getBranchProtectionRules;
+const branchProtectionRuleCount = 10;
 
 
 /***/ }),
@@ -208,12 +209,12 @@ function run() {
                 return;
             }
             yield updateRecordIssueBody(ctx, recordIssue, Object.assign(Object.assign({}, recordBody), { editing: true }));
-            let newIssueBody = { editing: false };
+            let newRecordBody = Object.assign(Object.assign({}, recordBody), { editing: false });
             try {
-                newIssueBody = yield maybeUpdateBranchAndMerge(ctx, recordBody, condition);
+                newRecordBody = yield maybeUpdateBranchAndMerge(ctx, recordBody, condition);
             }
             finally {
-                yield updateRecordIssueBody(ctx, recordIssue, newIssueBody);
+                yield updateRecordIssueBody(ctx, recordIssue, newRecordBody);
             }
         }
         catch (error) {
@@ -273,51 +274,23 @@ function maybeUpdateBranchAndMerge(ctx, recordBody, condition) {
 }
 function updateRecordIssueBody(ctx, recordIssue, body) {
     return __awaiter(this, void 0, void 0, function* () {
-        yield (0, issue_1.updateIssue)(ctx, Object.assign(Object.assign({}, recordIssue), { body: createIssueBody(body) }));
+        yield (0, issue_1.updateIssue)(ctx, Object.assign(Object.assign({}, recordIssue), { body: (0, utils_1.createIssueBody)(body) }));
     });
 }
 function getRecordIssue(ctx, createdBy) {
     return __awaiter(this, void 0, void 0, function* () {
-        let recordIssue = yield (0, issue_1.findCreatedIssueWithBodyPrefix)(ctx, createdBy, issueBodyPrefix);
+        let recordIssue = yield (0, issue_1.findCreatedIssueWithBodyPrefix)(ctx, createdBy, utils_1.issueBodyPrefix);
         if (!recordIssue) {
             recordIssue = yield (0, issue_1.createIssue)(ctx, issueTitle);
         }
-        const recordBody = parseIssueBody(recordIssue.body);
+        const recordBody = (0, utils_1.parseIssueBody)(recordIssue.body);
         return {
             recordIssue,
             recordBody
         };
     });
 }
-function parseIssueBody(body) {
-    var _a;
-    try {
-        const json = (_a = body
-            .split(issueBodyStatusPrefix)
-            .filter(e => e)
-            .pop()) === null || _a === void 0 ? void 0 : _a.split(issueBodyStatusSuffix).filter(e => e)[0];
-        return JSON.parse(json !== null && json !== void 0 ? json : '');
-    }
-    catch (e) {
-        return {};
-    }
-}
-function createIssueBody(body) {
-    return `
-${issueBodyPrefix}
-This issue provides [lcdsmao/update-branch](https://github.com/lcdsmao/update-branch) status.
-
-Status:
-
-${issueBodyStatusPrefix}
-${(0, utils_1.stringify)(body)}
-${issueBodyStatusSuffix}
-`;
-}
 const issueTitle = 'Update Branch Dashboard';
-const issueBodyPrefix = '<!-- lcdsmao/update-branch -->';
-const issueBodyStatusPrefix = '```json';
-const issueBodyStatusSuffix = '```';
 run();
 
 
@@ -343,9 +316,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.mergePullRequest = exports.enablePullRequestAutoMerge = exports.updateBranch = exports.listAvailablePullRequests = exports.getPullRequest = void 0;
 const async_retry_1 = __importDefault(__nccwpck_require__(3415));
-const firstPrNum = 50;
-const checksNum = 50;
-const labelNum = 10;
 function getPullRequest(ctx, num) {
     return __awaiter(this, void 0, void 0, function* () {
         const result = yield ctx.octokit.graphql(`query ($owner: String!, $repo: String!, $num: Int!) {
@@ -421,7 +391,7 @@ function listPullRequests(ctx) {
     return __awaiter(this, void 0, void 0, function* () {
         const result = yield ctx.octokit.graphql(`query ($owner: String!, $repo: String!) {
         repository(name: $repo, owner: $owner) {
-          pullRequests(first: ${firstPrNum}, states: OPEN) {
+          pullRequests(first: ${pullRequestCount}, states: OPEN) {
             nodes {
               ${pullRequestFragment}
             }
@@ -437,6 +407,9 @@ function listPullRequests(ctx) {
         return result.repository.pullRequests.nodes;
     });
 }
+const pullRequestCount = 50;
+const checkCount = 50;
+const labelCount = 10;
 const pullRequestFragment = `
   id
   title
@@ -451,7 +424,7 @@ const pullRequestFragment = `
   reviewRequests {
     totalCount
   }
-  labels(first: ${labelNum}) {
+  labels(first: ${labelCount}) {
     nodes {
       name
     }
@@ -460,7 +433,7 @@ const pullRequestFragment = `
     nodes {
       commit {
         statusCheckRollup {
-          contexts(first: ${checksNum}) {
+          contexts(first: ${checkCount}) {
             nodes {
               ... on CheckRun {
                 name
@@ -522,7 +495,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.stringify = exports.isStatusCheckPassPr = exports.isPendingMergePr = void 0;
+exports.issueBodyStatusSuffix = exports.issueBodyStatusPrefix = exports.issueBodyPrefix = exports.createIssueBody = exports.parseIssueBody = exports.stringify = exports.isStatusCheckPassPr = exports.isPendingMergePr = void 0;
 const minimatch_1 = __importDefault(__nccwpck_require__(3973));
 function isPendingMergePr(pr, condition) {
     const check = pr.commits.nodes[0].commit.statusCheckRollup;
@@ -567,6 +540,36 @@ function isStatusChecksSuccess(pr, condition) {
         return check.state === 'SUCCESS';
     }
 }
+function parseIssueBody(body) {
+    var _a;
+    try {
+        const json = (_a = body
+            .split(exports.issueBodyStatusPrefix)
+            .filter(e => e)
+            .pop()) === null || _a === void 0 ? void 0 : _a.split(exports.issueBodyStatusSuffix).filter(e => e)[0];
+        return JSON.parse(json !== null && json !== void 0 ? json : '');
+    }
+    catch (e) {
+        return {};
+    }
+}
+exports.parseIssueBody = parseIssueBody;
+function createIssueBody(body) {
+    return `
+${exports.issueBodyPrefix}
+This issue provides [lcdsmao/update-branch](https://github.com/lcdsmao/update-branch) status.
+
+Status:
+
+${exports.issueBodyStatusPrefix}
+${stringify(body)}
+${exports.issueBodyStatusSuffix}
+`;
+}
+exports.createIssueBody = createIssueBody;
+exports.issueBodyPrefix = '<!-- lcdsmao/update-branch -->';
+exports.issueBodyStatusPrefix = '```json';
+exports.issueBodyStatusSuffix = '```';
 
 
 /***/ }),
