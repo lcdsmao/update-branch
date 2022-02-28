@@ -75,7 +75,7 @@ export async function updateIssue(
   issue: IssueInfo
 ): Promise<void> {
   await ctx.octokit.graphql(
-    `mutation ($id: String!, $body: String!) {
+    `mutation ($id: ID!, $body: String!) {
       updateIssue(input: {id: $id, body: $body}) {
         clientMutationId
       }
