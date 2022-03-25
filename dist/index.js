@@ -499,6 +499,8 @@ exports.issueBodyStatusSuffix = exports.issueBodyStatusPrefix = exports.issueBod
 const minimatch_1 = __importDefault(__nccwpck_require__(3973));
 function isPendingMergePr(pr, condition) {
     const check = pr.commits.nodes[0].commit.statusCheckRollup;
+    if (!check)
+        return false;
     const checkNodes = check.contexts.nodes;
     return (isSatisfyBasicConditionPr(pr, condition) &&
         (checkNodes.some(v => v.state === 'PENDING') || check.state === 'PENDING'));
@@ -529,6 +531,8 @@ function hasLabels(pr, condition) {
 }
 function isStatusChecksSuccess(pr, condition) {
     const check = pr.commits.nodes[0].commit.statusCheckRollup;
+    if (!check)
+        return false;
     if (condition.requiredStatusChecks.length) {
         const nodeChecks = new Map(check.contexts.nodes.map(i => [i.name || i.context, i]));
         return condition.requiredStatusChecks.every(name => {

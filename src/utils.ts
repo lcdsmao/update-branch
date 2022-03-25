@@ -6,6 +6,7 @@ export function isPendingMergePr(
   condition: Condition
 ): boolean {
   const check = pr.commits.nodes[0].commit.statusCheckRollup
+  if (!check) return false
   const checkNodes = check.contexts.nodes
   return (
     isSatisfyBasicConditionPr(pr, condition) &&
@@ -52,6 +53,7 @@ function isStatusChecksSuccess(
   condition: Condition
 ): boolean {
   const check = pr.commits.nodes[0].commit.statusCheckRollup
+  if (!check) return false
   if (condition.requiredStatusChecks.length) {
     const nodeChecks = new Map(
       check.contexts.nodes.map(i => [i.name || i.context, i])
