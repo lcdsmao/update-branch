@@ -81,7 +81,7 @@ export interface IssueInfo {
 
 export interface CommitInfo {
   commit: {
-    statusCheckRollup: StatusCheckRollupInfo
+    statusCheckRollup?: StatusCheckRollupInfo
   }
 }
 
