@@ -11,6 +11,7 @@ export interface Condition {
   branchNamePattern?: string
   requiredApprovals: number
   requiredStatusChecks: string[]
+  allRequestedReviewersMustApprove: boolean
   requiredLabels: string[]
 }
 
