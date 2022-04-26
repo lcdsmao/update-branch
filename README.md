@@ -53,6 +53,8 @@ jobs:
           requiredLabels: auto-merge
           # Required at least 2 approves (default: 0)
           requiredApprovals: 2
+          # Required approvals from all requested reviewers
+          allRequestedReviewersMustApprove: true
           # Required these status checks success
           requiredStatusChecks: |
             build_pr
