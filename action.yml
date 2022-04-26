@@ -14,18 +14,22 @@ inputs:
     default: 'MERGE'
   requiredLabels:
     required: false
-    description: 'Labels need to be present for a pull request.'
+    description: 'Labels must be present before merging.'
   requiredApprovals:
     required: false
-    description: 'Count of required approval'
+    description: 'Count of approvals must be this number before merging.'
     default: '0'
+  allRequestedReviewersMustApprove:
+    required: false
+    description: 'Must get approvals from all requested reviewers before merging.'
+    default: 'true'
   requiredStatusChecks:
     required: false
-    description: 'Multiple status checks required to be success'
+    description: 'Multiple status checks required to be success.'
     default: ''
   protectedBranchNamePattern:
     required: false
-    description: 'The name pattern of the base branch that your pull request wants to merge into. Branch protection rule with the same name pattern must be existed. If not set, the default behavior is to find the name pattern of main or master.'
+    description: 'The name pattern of GitHub branch protection rules to apply. The default behavior is to find the name pattern of main or master. Require personal access token to let this feature work.'
     default: ''
 runs:
   using: 'node12'
