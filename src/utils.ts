@@ -37,7 +37,8 @@ function isSatisfyBasicConditionPr(
     !pr.merged &&
     pr.mergeable === 'MERGEABLE' &&
     pr.reviews.totalCount >= condition.requiredApprovals &&
-    pr.reviewRequests.totalCount === 0 &&
+    (pr.reviewRequests.totalCount === 0 ||
+      !condition.allRequestedReviewersMustApprove) &&
     hasLabels(pr, condition) &&
     minimatch(pr.baseRefName, condition.branchNamePattern ?? '*')
   )

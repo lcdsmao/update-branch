@@ -29,6 +29,8 @@ async function run(): Promise<void> {
       .split('\n')
       .filter(s => s !== '')
     const requiredApprovals = parseInt(core.getInput('requiredApprovals'))
+    const allRequestedReviewersMustApprove =
+      core.getInput('allRequestedReviewersMustApprove') === 'true'
     const requiredStatusChecks = core
       .getInput('requiredStatusChecks')
       .split('\n')
@@ -51,6 +53,7 @@ async function run(): Promise<void> {
       requiredApprovals:
         requiredApprovals ||
         (branchProtectionRule?.requiredApprovingReviewCount ?? 0),
+      allRequestedReviewersMustApprove,
       requiredStatusChecks: [
         ...requiredStatusChecks,
         ...(branchProtectionRule?.requiredStatusCheckContexts ?? [])
