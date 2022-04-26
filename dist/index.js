@@ -181,6 +181,7 @@ function run() {
                 .split('\n')
                 .filter(s => s !== '');
             const requiredApprovals = parseInt(core.getInput('requiredApprovals'));
+            const allRequestedReviewersMustApprove = core.getInput('allRequestedReviewersMustApprove') === 'true';
             const requiredStatusChecks = core
                 .getInput('requiredStatusChecks')
                 .split('\n')
@@ -194,6 +195,7 @@ function run() {
                 branchNamePattern: branchProtectionRule === null || branchProtectionRule === void 0 ? void 0 : branchProtectionRule.pattern,
                 requiredApprovals: requiredApprovals ||
                     ((_a = branchProtectionRule === null || branchProtectionRule === void 0 ? void 0 : branchProtectionRule.requiredApprovingReviewCount) !== null && _a !== void 0 ? _a : 0),
+                allRequestedReviewersMustApprove,
                 requiredStatusChecks: [
                     ...requiredStatusChecks,
                     ...((_b = branchProtectionRule === null || branchProtectionRule === void 0 ? void 0 : branchProtectionRule.requiredStatusCheckContexts) !== null && _b !== void 0 ? _b : [])
@@ -521,7 +523,8 @@ function isSatisfyBasicConditionPr(pr, condition) {
     return (!pr.merged &&
         pr.mergeable === 'MERGEABLE' &&
         pr.reviews.totalCount >= condition.requiredApprovals &&
-        pr.reviewRequests.totalCount === 0 &&
+        (pr.reviewRequests.totalCount === 0 ||
+            !condition.allRequestedReviewersMustApprove) &&
         hasLabels(pr, condition) &&
         (0, minimatch_1.default)(pr.baseRefName, (_a = condition.branchNamePattern) !== null && _a !== void 0 ? _a : '*'));
 }
