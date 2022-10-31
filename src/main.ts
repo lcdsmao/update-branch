@@ -13,6 +13,7 @@ import {Condition, GhContext, IssueInfo, RecordBody} from './type'
 import {getViewerName} from './user'
 import {
   createIssueBody,
+  isIssueOutdated,
   isPendingMergePr,
   isStatusCheckPassPr,
   issueBodyPrefix,
@@ -66,7 +67,10 @@ async function run(): Promise<void> {
 
     const viewerName = await getViewerName(ctx)
     const {recordIssue, recordBody} = await getRecordIssue(ctx, viewerName)
-    if (recordBody.editing) {
+    const recordIssueOutdated = isIssueOutdated(recordIssue)
+    // Sometimes unknown errors may occur, and issue body editing keeps true.
+    // We ignore the editing field if the issue is outdated.
+    if (recordBody.editing && !recordIssueOutdated) {
       core.info('Other actions are editing record. Exit.')
       return
     }

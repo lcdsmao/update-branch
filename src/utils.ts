@@ -1,5 +1,5 @@
 import minimatch from 'minimatch'
-import {Condition, PullRequestInfo, RecordBody} from './type'
+import {Condition, IssueInfo, PullRequestInfo, RecordBody} from './type'
 
 export function isPendingMergePr(
   pr: PullRequestInfo,
@@ -66,6 +66,12 @@ function isStatusChecksSuccess(
   } else {
     return check.state === 'SUCCESS'
   }
+}
+
+export function isIssueOutdated(issue: IssueInfo): boolean {
+  const outdatedMillis = 5 * 60 * 1000 // 5 minutes
+  const updatedAt = issue.updatedAt ? Date.parse(issue.updatedAt) : 0
+  return Date.now() - updatedAt > outdatedMillis
 }
 
 export function parseIssueBody(body: string): RecordBody {

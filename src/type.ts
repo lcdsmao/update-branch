@@ -78,6 +78,7 @@ export interface PullRequestInfo {
 export interface IssueInfo {
   id: string
   body: string
+  updatedAt?: string
 }
 
 export interface CommitInfo {

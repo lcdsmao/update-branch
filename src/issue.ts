@@ -17,6 +17,7 @@ export async function findCreatedIssueWithBodyPrefix(
             nodes {
               id
               body
+              updatedAt
             }
           }
         }
