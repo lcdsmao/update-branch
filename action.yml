@@ -32,5 +32,5 @@ inputs:
     description: 'The name pattern of GitHub branch protection rules to apply. The default behavior is to find the name pattern of main or master. Require personal access token to let this feature work.'
     default: ''
 runs:
-  using: 'node12'
+  using: 'node16'
   main: 'dist/index.js'
