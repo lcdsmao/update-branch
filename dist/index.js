@@ -192,9 +192,14 @@ function run() {
                 .split('\n')
                 .filter(s => s !== '');
             const protectedBranchNamePattern = core.getInput('protectedBranchNamePattern');
+            const fetchConfig = {
+                prs: parseInt(core.getInput('fetchMaxPr')),
+                checks: parseInt(core.getInput('fetchMaxPrChecks')),
+                labels: parseInt(core.getInput('fetchMaxPrLabels'))
+            };
             const octokit = github.getOctokit(token);
             const { owner, repo } = github.context.repo;
-            const ctx = { octokit, owner, repo, autoMergeMethod };
+            const ctx = { octokit, owner, repo, autoMergeMethod, fetchConfig };
             const branchProtectionRule = yield (0, branchProtection_1.getBranchProtectionRules)(ctx, protectedBranchNamePattern);
             const condition = {
                 branchNamePattern: branchProtectionRule === null || branchProtectionRule === void 0 ? void 0 : branchProtectionRule.pattern,
@@ -331,7 +336,7 @@ function getPullRequest(ctx, num) {
         const result = yield ctx.octokit.graphql(`query ($owner: String!, $repo: String!, $num: Int!) {
         repository(name: $repo, owner: $owner) {
           pullRequest(number: $num) {
-            ${pullRequestFragment}
+            ${getPullRequestFragment(ctx.fetchConfig)}
           }
         }
       }`, {
@@ -401,9 +406,9 @@ function listPullRequests(ctx) {
     return __awaiter(this, void 0, void 0, function* () {
         const result = yield ctx.octokit.graphql(`query ($owner: String!, $repo: String!) {
         repository(name: $repo, owner: $owner) {
-          pullRequests(first: ${pullRequestCount}, states: OPEN) {
+          pullRequests(first: ${ctx.fetchConfig.prs}, states: OPEN) {
             nodes {
-              ${pullRequestFragment}
+              ${getPullRequestFragment(ctx.fetchConfig)}
             }
           }
         }
@@ -417,10 +422,8 @@ function listPullRequests(ctx) {
         return result.repository.pullRequests.nodes;
     });
 }
-const pullRequestCount = 50;
-const checkCount = 100;
-const labelCount = 10;
-const pullRequestFragment = `
+function getPullRequestFragment(cfg) {
+    return `
   id
   title
   baseRefName
@@ -434,7 +437,7 @@ const pullRequestFragment = `
   reviewRequests {
     totalCount
   }
-  labels(first: ${labelCount}) {
+  labels(first: ${cfg.labels}) {
     nodes {
       name
     }
@@ -443,7 +446,7 @@ const pullRequestFragment = `
     nodes {
       commit {
         statusCheckRollup {
-          contexts(first: ${checkCount}) {
+          contexts(first: ${cfg.checks}) {
             nodes {
               ... on CheckRun {
                 name
@@ -460,6 +463,7 @@ const pullRequestFragment = `
       }
     }
   }`;
+}
 
 
 /***/ }),
