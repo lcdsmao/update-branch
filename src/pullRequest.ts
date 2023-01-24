@@ -1,5 +1,6 @@
 import retry from 'async-retry'
 import {
+  FetchConfig,
   GhContext,
   PullRequestInfo,
   RepositoryGetPullRequest,
@@ -14,7 +15,7 @@ export async function getPullRequest(
     `query ($owner: String!, $repo: String!, $num: Int!) {
         repository(name: $repo, owner: $owner) {
           pullRequest(number: $num) {
-            ${pullRequestFragment}
+            ${getPullRequestFragment(ctx.fetchConfig)}
           }
         }
       }`,
@@ -96,9 +97,9 @@ async function listPullRequests(ctx: GhContext): Promise<PullRequestInfo[]> {
   const result: RepositoryListPullRequest = await ctx.octokit.graphql(
     `query ($owner: String!, $repo: String!) {
         repository(name: $repo, owner: $owner) {
-          pullRequests(first: ${pullRequestCount}, states: OPEN) {
+          pullRequests(first: ${ctx.fetchConfig.prs}, states: OPEN) {
             nodes {
-              ${pullRequestFragment}
+              ${getPullRequestFragment(ctx.fetchConfig)}
             }
           }
         }
@@ -114,11 +115,8 @@ async function listPullRequests(ctx: GhContext): Promise<PullRequestInfo[]> {
   return result.repository.pullRequests.nodes
 }
 
-const pullRequestCount = 50
-const checkCount = 100
-const labelCount = 10
-
-const pullRequestFragment = `
+function getPullRequestFragment(cfg: FetchConfig): string {
+  return `
   id
   title
   baseRefName
@@ -132,7 +130,7 @@ const pullRequestFragment = `
   reviewRequests {
     totalCount
   }
-  labels(first: ${labelCount}) {
+  labels(first: ${cfg.labels}) {
     nodes {
       name
     }
@@ -141,7 +139,7 @@ const pullRequestFragment = `
     nodes {
       commit {
         statusCheckRollup {
-          contexts(first: ${checkCount}) {
+          contexts(first: ${cfg.checks}) {
             nodes {
               ... on CheckRun {
                 name
@@ -158,3 +156,4 @@ const pullRequestFragment = `
       }
     }
   }`
+}
