@@ -115,7 +115,7 @@ async function listPullRequests(ctx: GhContext): Promise<PullRequestInfo[]> {
 }
 
 const pullRequestCount = 50
-const checkCount = 50
+const checkCount = 100
 const labelCount = 10
 
 const pullRequestFragment = `
