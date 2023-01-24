@@ -5,11 +5,11 @@ Merge your pull request in order when enabled the `Require branches to be up to 
 Inspired by [Merge Queue feature of Mergify](https://mergify.io/features/merge-queue).
 
 > Safety
-> 
+>
 > Do not merge broken pull requests. By merging your pull requests serially using a queue, your code is safe. Each pull request is tested with the latest CI code.
 
 > Save CI time
-> 
+>
 > Rather than overconsuming your CI time by trying to merge multiple pull requests, just run it once before the pull request gets merged.
 
 ## Quick Start
@@ -18,7 +18,7 @@ Inspired by [Merge Queue feature of Mergify](https://mergify.io/features/merge-q
 
 1. Enable `Allow auto-merge` in `Settings/Options`.
 
-3. Create a workflow file (`.github/workflow/update-branch.yaml`):
+2. Create a workflow file (`.github/workflow/update-branch.yaml`):
 
 Example:
 
@@ -59,6 +59,12 @@ jobs:
           requiredStatusChecks: |
             build_pr
             WIP
+          # Optionally set the maximum amount of pull requests to match against (default: 50)
+          fetchMaxPr: 50
+          # Optionally set the maximum amount of pull request checks to fetch (default: 100)
+          fetchMaxPrChecks: 100
+          # Optionally set the maximum amount of pull request labels to fetch (default: 10)
+          fetchMaxPrLabels: 10
 ```
 
 If you are using a personal access token and it has permission to access branch protection rules, you can set your jobs like:

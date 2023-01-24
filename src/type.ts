@@ -1,10 +1,17 @@
 import {Octokit} from '@octokit/core'
 
+export interface FetchConfig {
+  prs: number
+  labels: number
+  checks: number
+}
+
 export interface GhContext {
   octokit: Octokit
   owner: string
   repo: string
   autoMergeMethod: string
+  fetchConfig: FetchConfig
 }
 
 export interface Condition {

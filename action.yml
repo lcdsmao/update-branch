@@ -31,6 +31,18 @@ inputs:
     required: false
     description: 'The name pattern of GitHub branch protection rules to apply. The default behavior is to find the name pattern of main or master. Require personal access token to let this feature work.'
     default: ''
+  fetchMaxPr:
+    required: false
+    description: 'The maximum amount of pull request fetch when searching for eligible pull requests.'
+    default: '50'
+  fetchMaxPrChecks:
+    required: false
+    description: 'The maximum amount of pull request checks to fetch when searching for requiredStatusChecks.'
+    default: '100'
+  fetchMaxPrLabels:
+    required: false
+    description: 'The maximum amount of pull request labels to fetch when searching for requiredLabels.'
+    default: '10'
 runs:
   using: 'node16'
   main: 'dist/index.js'

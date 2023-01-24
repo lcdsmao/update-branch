@@ -9,7 +9,7 @@ import {
   mergePullRequest,
   updateBranch
 } from './pullRequest'
-import {Condition, GhContext, IssueInfo, RecordBody} from './type'
+import {Condition, FetchConfig, GhContext, IssueInfo, RecordBody} from './type'
 import {getViewerName} from './user'
 import {
   createIssueBody,
@@ -39,10 +39,15 @@ async function run(): Promise<void> {
     const protectedBranchNamePattern = core.getInput(
       'protectedBranchNamePattern'
     )
+    const fetchConfig: FetchConfig = {
+      prs: parseInt(core.getInput('fetchMaxPr')),
+      checks: parseInt(core.getInput('fetchMaxPrChecks')),
+      labels: parseInt(core.getInput('fetchMaxPrLabels'))
+    }
 
     const octokit = github.getOctokit(token)
     const {owner, repo} = github.context.repo
-    const ctx: GhContext = {octokit, owner, repo, autoMergeMethod}
+    const ctx: GhContext = {octokit, owner, repo, autoMergeMethod, fetchConfig}
 
     const branchProtectionRule = await getBranchProtectionRule(
       ctx,
