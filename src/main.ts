@@ -39,10 +39,22 @@ async function run(): Promise<void> {
     const protectedBranchNamePattern = core.getInput(
       'protectedBranchNamePattern'
     )
+    const prRunsContextOrder = core.getInput('prChecksFetchOrder')
+    switch (prRunsContextOrder) {
+      case 'first':
+      case 'last':
+        break
+      default:
+        core.setFailed(
+          `prChecksFetchOrder=${prRunsContextOrder}. Valid values: [first, last]`
+        )
+        return
+    }
     const fetchConfig: FetchConfig = {
       prs: parseInt(core.getInput('fetchMaxPr')),
       checks: parseInt(core.getInput('fetchMaxPrChecks')),
-      labels: parseInt(core.getInput('fetchMaxPrLabels'))
+      labels: parseInt(core.getInput('fetchMaxPrLabels')),
+      prRunsContextOrder
     }
 
     const octokit = github.getOctokit(token)

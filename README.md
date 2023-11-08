@@ -65,6 +65,8 @@ jobs:
           fetchMaxPrChecks: 100
           # Optionally set the maximum amount of pull request labels to fetch (default: 10)
           fetchMaxPrLabels: 10
+          # The order pr checks should be fetched in. If the required checks are the last ones, consider setting to "last"
+          prChecksFetchOrder: first
 ```
 
 If you are using a personal access token and it has permission to access branch protection rules, you can set your jobs like:
