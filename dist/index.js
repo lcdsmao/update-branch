@@ -192,10 +192,20 @@ function run() {
                 .split('\n')
                 .filter(s => s !== '');
             const protectedBranchNamePattern = core.getInput('protectedBranchNamePattern');
+            const prRunsContextOrder = core.getInput('prChecksFetchOrder');
+            switch (prRunsContextOrder) {
+                case 'first':
+                case 'last':
+                    break;
+                default:
+                    core.setFailed(`prChecksFetchOrder=${prRunsContextOrder}. Valid values: [first, last]`);
+                    return;
+            }
             const fetchConfig = {
                 prs: parseInt(core.getInput('fetchMaxPr')),
                 checks: parseInt(core.getInput('fetchMaxPrChecks')),
-                labels: parseInt(core.getInput('fetchMaxPrLabels'))
+                labels: parseInt(core.getInput('fetchMaxPrLabels')),
+                prRunsContextOrder
             };
             const octokit = github.getOctokit(token);
             const { owner, repo } = github.context.repo;
@@ -446,7 +456,7 @@ function getPullRequestFragment(cfg) {
     nodes {
       commit {
         statusCheckRollup {
-          contexts(first: ${cfg.checks}) {
+          contexts(${cfg.prRunsContextOrder}: ${cfg.checks}) {
             nodes {
               ... on CheckRun {
                 name
