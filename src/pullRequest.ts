@@ -139,7 +139,7 @@ function getPullRequestFragment(cfg: FetchConfig): string {
     nodes {
       commit {
         statusCheckRollup {
-          contexts(first: ${cfg.checks}) {
+          contexts(${cfg.prRunsContextOrder}: ${cfg.checks}) {
             nodes {
               ... on CheckRun {
                 name

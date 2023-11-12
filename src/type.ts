@@ -4,6 +4,7 @@ export interface FetchConfig {
   prs: number
   labels: number
   checks: number
+  prRunsContextOrder: 'first' | 'last'
 }
 
 export interface GhContext {
