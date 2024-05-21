@@ -16,6 +16,7 @@ export async function getBranchProtectionRules(
             nodes {
               requiredApprovingReviewCount
               requiredStatusCheckContexts
+              requiresConversationResolution
               pattern
             }
           }

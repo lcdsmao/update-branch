@@ -25,6 +25,7 @@ function getBranchProtectionRules(ctx, pattern) {
             nodes {
               requiredApprovingReviewCount
               requiredStatusCheckContexts
+              requiresConversationResolution
               pattern
             }
           }
@@ -176,7 +177,7 @@ const pullRequest_1 = __nccwpck_require__(7829);
 const user_1 = __nccwpck_require__(7727);
 const utils_1 = __nccwpck_require__(918);
 function run() {
-    var _a, _b;
+    var _a, _b, _c;
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const token = core.getInput('token');
@@ -205,6 +206,7 @@ function run() {
                 prs: parseInt(core.getInput('fetchMaxPr')),
                 checks: parseInt(core.getInput('fetchMaxPrChecks')),
                 labels: parseInt(core.getInput('fetchMaxPrLabels')),
+                comments: parseInt(core.getInput('fetchMaxComments')),
                 prRunsContextOrder
             };
             const octokit = github.getOctokit(token);
@@ -216,9 +218,10 @@ function run() {
                 requiredApprovals: requiredApprovals ||
                     ((_a = branchProtectionRule === null || branchProtectionRule === void 0 ? void 0 : branchProtectionRule.requiredApprovingReviewCount) !== null && _a !== void 0 ? _a : 0),
                 allRequestedReviewersMustApprove,
+                requiresConversationResolution: (_b = branchProtectionRule === null || branchProtectionRule === void 0 ? void 0 : branchProtectionRule.requiresConversationResolution) !== null && _b !== void 0 ? _b : false,
                 requiredStatusChecks: [
                     ...requiredStatusChecks,
-                    ...((_b = branchProtectionRule === null || branchProtectionRule === void 0 ? void 0 : branchProtectionRule.requiredStatusCheckContexts) !== null && _b !== void 0 ? _b : [])
+                    ...((_c = branchProtectionRule === null || branchProtectionRule === void 0 ? void 0 : branchProtectionRule.requiredStatusCheckContexts) !== null && _c !== void 0 ? _c : [])
                 ],
                 requiredLabels
             };
@@ -452,6 +455,11 @@ function getPullRequestFragment(cfg) {
       name
     }
   }
+  comments(last: ${cfg.comments}) {
+    nodes {
+      minimizedReason
+    }
+  }
   commits(last: 1) {
     nodes {
       commit {
@@ -539,6 +547,9 @@ function stringify(obj) {
     return JSON.stringify(obj, null, 2);
 }
 exports.stringify = stringify;
+function checkConversationResolution(pr) {
+    return pr.comments.nodes.every(v => v.minimizedReason === 'resolved');
+}
 // Except status check
 function isSatisfyBasicConditionPr(pr, condition) {
     var _a;
@@ -548,7 +559,9 @@ function isSatisfyBasicConditionPr(pr, condition) {
         (pr.reviewRequests.totalCount === 0 ||
             !condition.allRequestedReviewersMustApprove) &&
         hasLabels(pr, condition) &&
-        (0, minimatch_1.default)(pr.baseRefName, (_a = condition.branchNamePattern) !== null && _a !== void 0 ? _a : '*'));
+        (0, minimatch_1.default)(pr.baseRefName, (_a = condition.branchNamePattern) !== null && _a !== void 0 ? _a : '*') &&
+        (!condition.requiresConversationResolution ||
+            checkConversationResolution(pr)));
 }
 function hasLabels(pr, condition) {
     const labelNames = pr.labels.nodes.map(v => v.name);

@@ -43,6 +43,10 @@ inputs:
     required: false
     description: 'The maximum amount of pull request labels to fetch when searching for requiredLabels.'
     default: '10'
+  fetchMaxComments:
+    required: false
+    description: 'The maximum amount of comments to fetch when checking for required conversaion resolution.'
+    default: '50'
   prChecksFetchOrder:
     required: false
     description: 'The order pr checks should be fetched in. If the required checks are the last ones, consider setting to "last"'
