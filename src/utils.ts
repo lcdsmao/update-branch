@@ -29,7 +29,7 @@ export function stringify<T>(obj: T): string {
 }
 
 function checkConversationResolution(pr: PullRequestInfo): boolean {
-  return pr.comments.nodes.every(v => v.minimizedReason === 'resolved')
+  return pr.reviewThreads.nodes.every(v => v.isResolved)
 }
 
 // Except status check

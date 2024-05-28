@@ -455,9 +455,9 @@ function getPullRequestFragment(cfg) {
       name
     }
   }
-  comments(last: ${cfg.comments}) {
+  reviewThreads(last: ${cfg.comments}) {
     nodes {
-      minimizedReason
+      isResolved
     }
   }
   commits(last: 1) {
@@ -548,7 +548,7 @@ function stringify(obj) {
 }
 exports.stringify = stringify;
 function checkConversationResolution(pr) {
-    return pr.comments.nodes.every(v => v.minimizedReason === 'resolved');
+    return pr.reviewThreads.nodes.every(v => v.isResolved);
 }
 // Except status check
 function isSatisfyBasicConditionPr(pr, condition) {

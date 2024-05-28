@@ -76,8 +76,8 @@ export interface PullRequestInfo {
   labels: {
     nodes: LabelInfo[]
   }
-  comments: {
-    nodes: IssueComment[]
+  reviewThreads: {
+    nodes: ReviewThread[]
   }
   number: number
   merged: boolean
@@ -94,8 +94,8 @@ export interface IssueInfo {
   updatedAt?: string
 }
 
-export interface IssueComment {
-  minimizedReason: string
+export interface ReviewThread {
+  isResolved: boolean
 }
 
 export interface CommitInfo {

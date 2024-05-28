@@ -135,9 +135,9 @@ function getPullRequestFragment(cfg: FetchConfig): string {
       name
     }
   }
-  comments(last: ${cfg.comments}) {
+  reviewThreads(last: ${cfg.comments}) {
     nodes {
-      minimizedReason
+      isResolved
     }
   }
   commits(last: 1) {
