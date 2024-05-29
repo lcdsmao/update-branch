@@ -25,7 +25,6 @@ function getBranchProtectionRules(ctx, pattern) {
             nodes {
               requiredApprovingReviewCount
               requiredStatusCheckContexts
-              requiresConversationResolution
               pattern
             }
           }
@@ -177,7 +176,7 @@ const pullRequest_1 = __nccwpck_require__(7829);
 const user_1 = __nccwpck_require__(7727);
 const utils_1 = __nccwpck_require__(918);
 function run() {
-    var _a, _b, _c;
+    var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const token = core.getInput('token');
@@ -193,21 +192,10 @@ function run() {
                 .split('\n')
                 .filter(s => s !== '');
             const protectedBranchNamePattern = core.getInput('protectedBranchNamePattern');
-            const prRunsContextOrder = core.getInput('prChecksFetchOrder');
-            switch (prRunsContextOrder) {
-                case 'first':
-                case 'last':
-                    break;
-                default:
-                    core.setFailed(`prChecksFetchOrder=${prRunsContextOrder}. Valid values: [first, last]`);
-                    return;
-            }
             const fetchConfig = {
                 prs: parseInt(core.getInput('fetchMaxPr')),
                 checks: parseInt(core.getInput('fetchMaxPrChecks')),
-                labels: parseInt(core.getInput('fetchMaxPrLabels')),
-                comments: parseInt(core.getInput('fetchMaxComments')),
-                prRunsContextOrder
+                labels: parseInt(core.getInput('fetchMaxPrLabels'))
             };
             const octokit = github.getOctokit(token);
             const { owner, repo } = github.context.repo;
@@ -218,10 +206,9 @@ function run() {
                 requiredApprovals: requiredApprovals ||
                     ((_a = branchProtectionRule === null || branchProtectionRule === void 0 ? void 0 : branchProtectionRule.requiredApprovingReviewCount) !== null && _a !== void 0 ? _a : 0),
                 allRequestedReviewersMustApprove,
-                requiresConversationResolution: (_b = branchProtectionRule === null || branchProtectionRule === void 0 ? void 0 : branchProtectionRule.requiresConversationResolution) !== null && _b !== void 0 ? _b : false,
                 requiredStatusChecks: [
                     ...requiredStatusChecks,
-                    ...((_c = branchProtectionRule === null || branchProtectionRule === void 0 ? void 0 : branchProtectionRule.requiredStatusCheckContexts) !== null && _c !== void 0 ? _c : [])
+                    ...((_b = branchProtectionRule === null || branchProtectionRule === void 0 ? void 0 : branchProtectionRule.requiredStatusCheckContexts) !== null && _b !== void 0 ? _b : [])
                 ],
                 requiredLabels
             };
@@ -455,16 +442,11 @@ function getPullRequestFragment(cfg) {
       name
     }
   }
-  reviewThreads(last: ${cfg.comments}) {
-    nodes {
-      isResolved
-    }
-  }
   commits(last: 1) {
     nodes {
       commit {
         statusCheckRollup {
-          contexts(${cfg.prRunsContextOrder}: ${cfg.checks}) {
+          contexts(first: ${cfg.checks}) {
             nodes {
               ... on CheckRun {
                 name
@@ -547,9 +529,6 @@ function stringify(obj) {
     return JSON.stringify(obj, null, 2);
 }
 exports.stringify = stringify;
-function checkConversationResolution(pr) {
-    return pr.reviewThreads.nodes.every(v => v.isResolved);
-}
 // Except status check
 function isSatisfyBasicConditionPr(pr, condition) {
     var _a;
@@ -559,9 +538,7 @@ function isSatisfyBasicConditionPr(pr, condition) {
         (pr.reviewRequests.totalCount === 0 ||
             !condition.allRequestedReviewersMustApprove) &&
         hasLabels(pr, condition) &&
-        (0, minimatch_1.default)(pr.baseRefName, (_a = condition.branchNamePattern) !== null && _a !== void 0 ? _a : '*') &&
-        (!condition.requiresConversationResolution ||
-            checkConversationResolution(pr)));
+        (0, minimatch_1.default)(pr.baseRefName, (_a = condition.branchNamePattern) !== null && _a !== void 0 ? _a : '*'));
 }
 function hasLabels(pr, condition) {
     const labelNames = pr.labels.nodes.map(v => v.name);
