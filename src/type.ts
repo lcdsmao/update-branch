@@ -3,6 +3,7 @@ import {Octokit} from '@octokit/core'
 export interface FetchConfig {
   prs: number
   labels: number
+  comments: number
   checks: number
   prRunsContextOrder: 'first' | 'last'
 }
@@ -20,6 +21,7 @@ export interface Condition {
   requiredApprovals: number
   requiredStatusChecks: string[]
   allRequestedReviewersMustApprove: boolean
+  requiresConversationResolution: boolean
   requiredLabels: string[]
 }
 
@@ -74,6 +76,9 @@ export interface PullRequestInfo {
   labels: {
     nodes: LabelInfo[]
   }
+  reviewThreads: {
+    nodes: ReviewThread[]
+  }
   number: number
   merged: boolean
   mergeable: MergeableState
@@ -87,6 +92,10 @@ export interface IssueInfo {
   id: string
   body: string
   updatedAt?: string
+}
+
+export interface ReviewThread {
+  isResolved: boolean
 }
 
 export interface CommitInfo {
@@ -119,6 +128,7 @@ export interface BranchProtectionRuleInfo {
   pattern: string
   requiredApprovingReviewCount?: number
   requiredStatusCheckContexts: string[]
+  requiresConversationResolution: boolean
 }
 
 export interface RepositoryData<T> {

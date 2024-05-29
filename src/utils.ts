@@ -28,6 +28,10 @@ export function stringify<T>(obj: T): string {
   return JSON.stringify(obj, null, 2)
 }
 
+function checkConversationResolution(pr: PullRequestInfo): boolean {
+  return pr.reviewThreads.nodes.every(v => v.isResolved)
+}
+
 // Except status check
 function isSatisfyBasicConditionPr(
   pr: PullRequestInfo,
@@ -40,7 +44,9 @@ function isSatisfyBasicConditionPr(
     (pr.reviewRequests.totalCount === 0 ||
       !condition.allRequestedReviewersMustApprove) &&
     hasLabels(pr, condition) &&
-    minimatch(pr.baseRefName, condition.branchNamePattern ?? '*')
+    minimatch(pr.baseRefName, condition.branchNamePattern ?? '*') &&
+    (!condition.requiresConversationResolution ||
+      checkConversationResolution(pr))
   )
 }
 

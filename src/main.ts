@@ -54,6 +54,7 @@ async function run(): Promise<void> {
       prs: parseInt(core.getInput('fetchMaxPr')),
       checks: parseInt(core.getInput('fetchMaxPrChecks')),
       labels: parseInt(core.getInput('fetchMaxPrLabels')),
+      comments: parseInt(core.getInput('fetchMaxComments')),
       prRunsContextOrder
     }
 
@@ -72,6 +73,8 @@ async function run(): Promise<void> {
         requiredApprovals ||
         (branchProtectionRule?.requiredApprovingReviewCount ?? 0),
       allRequestedReviewersMustApprove,
+      requiresConversationResolution:
+        branchProtectionRule?.requiresConversationResolution ?? false,
       requiredStatusChecks: [
         ...requiredStatusChecks,
         ...(branchProtectionRule?.requiredStatusCheckContexts ?? [])

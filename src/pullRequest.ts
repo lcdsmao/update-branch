@@ -135,6 +135,11 @@ function getPullRequestFragment(cfg: FetchConfig): string {
       name
     }
   }
+  reviewThreads(last: ${cfg.comments}) {
+    nodes {
+      isResolved
+    }
+  }
   commits(last: 1) {
     nodes {
       commit {
